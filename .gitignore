@@ -3,3 +3,9 @@
 *.pyc
 *.pyo
 *.so
+
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/

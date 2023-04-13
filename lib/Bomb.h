@@ -9,6 +9,9 @@
  *
  */
 
+#ifndef BOMB_H
+#define BOMB_H
+
 class Bomb {
 private:
     int x;
@@ -30,3 +33,5 @@ public:
 
     void decrementTime();
 };
+
+#endif

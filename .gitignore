@@ -10,4 +10,4 @@
 *.iws
 .vscode/
 
-./cmake-build-debug/
+cmake-build-debug/

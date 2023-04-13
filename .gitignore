@@ -5,6 +5,7 @@
 *.so
 
 .idea/
+*.yml
 *.iml
 *.ipr
 *.iws

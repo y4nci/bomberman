@@ -18,7 +18,8 @@ Bomb::Bomb(int x, int y, int radius, int durability) {
     this->remainingTime = durability;
 }
 
-Bomb::~Bomb() = default;
+Bomb::~Bomb() {
+}
 
 int Bomb::getX() const {
     return this->x;

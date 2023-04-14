@@ -23,7 +23,6 @@ private:
     int id;
     std::vector<std::string> argv;
 public:
-    Bomber(const BomberInput& bomberInput, int id);
     Bomber(int x, int y, int id, std::vector<std::string> argv);
     ~Bomber();
     int getX() const;

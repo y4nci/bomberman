@@ -85,9 +85,9 @@ void Inputs::setBomberCount(int bomberCount) {
 }
 
 void Inputs::setObstacleInputs(std::vector<ObstacleInput> obstacleInputs) {
-    this->obstacleInputs = std::move(obstacleInputs);
+    this->obstacleInputs = (obstacleInputs);
 }
 
 void Inputs::setBomberInputs(std::vector<BomberInput> bomberInputs) {
-    this->bomberInputs = std::move(bomberInputs);
+    this->bomberInputs = (bomberInputs);
 }

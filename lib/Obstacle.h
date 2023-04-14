@@ -20,7 +20,6 @@ private:
     int y;
     int durability;
 public:
-    Obstacle(ObstacleInput obstacleInput);
     Obstacle(int x, int y, int durability);
     ~Obstacle();
     int getX() const;

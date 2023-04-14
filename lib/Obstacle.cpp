@@ -11,19 +11,14 @@
 
 #include "Obstacle.h"
 
-Obstacle::Obstacle(ObstacleInput obstacleInput) {
-    this->x = obstacleInput.x;
-    this->y = obstacleInput.y;
-    this->durability = obstacleInput.durability;
-}
-
 Obstacle::Obstacle(int x, int y, int durability) {
     this->x = x;
     this->y = y;
     this->durability = durability;
 }
 
-Obstacle::~Obstacle() = default;
+Obstacle::~Obstacle() {
+}
 
 int Obstacle::getX() const {
     return this->x;

@@ -12,21 +12,16 @@
 #include "Bomber.h"
 #include <utility>
 
-Bomber::Bomber(const BomberInput& bomberInput, int id) {
-    this->x = bomberInput.x;
-    this->y = bomberInput.y;
-    this->id = id;
-    this->argv = bomberInput.argv;
-}
-
 Bomber::Bomber(int x, int y, int id, std::vector<std::string> argv) {
     this->x = x;
     this->y = y;
     this->id = id;
-    this->argv = std::move(argv);
+    this->argv = (argv);
 }
 
-Bomber::~Bomber() = default;
+Bomber::~Bomber() {
+    this->argv.clear();
+}
 
 int Bomber::getX() const {
     return this->x;
@@ -57,5 +52,5 @@ void Bomber::setId(int id) {
 }
 
 void Bomber::setArgv(std::vector<std::string> argv) {
-    this->argv = std::move(argv);
+    this->argv = (argv);
 }

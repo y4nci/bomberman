@@ -11,4 +11,6 @@
 *.iws
 .vscode/
 
+test/
+
 cmake-build-debug/

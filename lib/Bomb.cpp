@@ -37,6 +37,10 @@ int Bomb::getRemainingTime() const {
     return this->remainingTime;
 }
 
+int Bomb::getFd() const {
+    return this->fd;
+}
+
 void Bomb::setX(int x) {
     this->x = x;
 }
@@ -51,6 +55,10 @@ void Bomb::setRadius(int radius) {
 
 void Bomb::setDurability(int durability) {
     this->remainingTime = durability;
+}
+
+void Bomb::setFd(int fd) {
+    this->fd = fd;
 }
 
 void Bomb::decrementTime() {

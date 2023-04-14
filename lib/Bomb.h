@@ -18,6 +18,7 @@ private:
     int y;
     int radius;
     int remainingTime;
+    int fd;
 public:
     Bomb(int x, int y, int radius, int durability);
     ~Bomb();
@@ -25,11 +26,13 @@ public:
     int getY() const;
     int getRadius() const;
     int getRemainingTime() const;
+    int getFd() const;
 
     void setX(int x);
     void setY(int y);
     void setRadius(int radius);
     void setDurability(int remainingTime);
+    void setFd(int fd);
 
     void decrementTime();
 };

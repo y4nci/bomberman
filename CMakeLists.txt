@@ -17,4 +17,4 @@ add_executable(HW1
         logging.c
         logging.h
         message.c
-        message.h lib/Obstacle.cpp lib/Obstacle.h lib/Bomber.cpp lib/Bomber.h test/driver.cpp lib/utils/miscUtils.cpp lib/utils/miscUtils.h lib/utils/Pipe.cpp lib/utils/Pipe.h)
+        message.h lib/Obstacle.cpp lib/Obstacle.h lib/Bomber.cpp lib/Bomber.h test/driver.cpp lib/utils/miscUtils.cpp lib/utils/miscUtils.h)

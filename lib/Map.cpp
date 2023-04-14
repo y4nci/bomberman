@@ -62,6 +62,10 @@ std::vector<Bomber> Map::getBombers() {
     return this->bombers;
 }
 
+std::vector<Bomb> Map::getBombs() {
+    return this->bombs;
+}
+
 void Map::setWidth(int width) {
     this->width = width;
 }
@@ -78,11 +82,11 @@ void Map::setBombers(std::vector<Bomber> bombers) {
     this->bombers = (bombers);
 }
 
-void Map::moveBomber(int targetX, int targetY) {
+void Map::moveBomber(int id, int targetX, int targetY) {
     Bomber *bomber = NULL;
 
     for (size_t i = 0; i < this->bombers.size(); i++) {
-        if (this->bombers[i].getX() == targetX && this->bombers[i].getY() == targetY) {
+        if (this->bombers[i].getId() == id) {
             bomber = &this->bombers[i];
         }
     }
@@ -98,7 +102,7 @@ void Map::moveBomber(int targetX, int targetY) {
     }
 
     for (size_t i = 0; i < this->bombers.size(); i++) {
-        if (this->bombers[i].getX() == targetX && this->bombers[i].getY() == targetY) {
+        if (this->bombers[i].getX() == targetX && this->bombers[i].getY() == targetY && this->bombers[i].getId() != id) {
             return;
         }
     }
@@ -115,9 +119,14 @@ void Map::moveBomber(int targetX, int targetY) {
     bomber->setY(targetY);
 }
 
-void Map::plantBomb(int bomberId, int radius, int durability) {
+void Map::setBombs(std::vector<Bomb> bombs) {
+    this->bombs = (bombs);
+}
+
+int Map::plantBomb(int bomberId, int radius, int durability) {
     Bomber *bomber = NULL;
     Bomb bomb (0, 0,radius,durability);
+    int fd;
 
     for (size_t i = 0; i < this->bombers.size(); i++) {
         if (this->bombers[i].getId() == bomberId) {
@@ -128,5 +137,60 @@ void Map::plantBomb(int bomberId, int radius, int durability) {
     bomb.setX(bomber->getX());
     bomb.setY(bomber->getY());
 
+    fd = createBombPipe(&bomb);
+
     this->bombs.push_back(bomb);
+
+    return fd;
+}
+
+// OTHER FUNCTIONS
+
+std::vector<int> createBomberPipes(Map* map) {
+    std::vector<int> fds;
+
+    for (int i = 0; i < map->getBomberCount(); i++) {
+        int fd[2];
+        PIPE(fd);
+        fds.push_back(fd[0]);
+        map->getBombers()[i].setFd(fd[1]);
+    }
+
+    return fds;
+}
+
+int createBombPipe(Bomb* bomb) {
+    int fd[2];
+    PIPE(fd);
+    bomb->setFd(fd[1]);
+
+    return fd[0];
+}
+
+void forkProcesses(Map* map, std::vector<int>* fds) {
+    for (int i = 0; i < map->getBomberCount(); i++) {
+        int pid = fork();
+        if (pid == 0) { // child
+            char** argv = new char*[map->getBombers()[i].getArgv().size() + 1];
+            for (size_t j = 0; j < map->getBombers()[i].getArgv().size(); j++) {
+                argv[j] = (char*) map->getBombers()[i].getArgv()[j].c_str();
+            }
+            dup2(map->getBombers()[i].getFd(), STDIN_FILENO);
+            dup2(map->getBombers()[i].getFd(), STDOUT_FILENO);
+            argv[map->getBombers()[i].getArgv().size()] = NULL;
+            close((*fds)[i]); // CLOSE PARENT'S CHANNEL
+            execv(argv[0], argv);
+            send_message(map->getBombers()[i].getFd(), (om*) BOMBER_START);
+
+            delete [] argv;
+        } else {
+            close(map->getBombers()[i].getFd()); // CLOSE CHILD'S CHANNEL
+        }
+    }
+}
+
+// forkbomb
+
+bool isGameFinished(Map map) {
+    return (map.getBomberCount() == 1);
 }

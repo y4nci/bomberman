@@ -22,6 +22,7 @@ private:
     int y;
     int id;
     std::vector<std::string> argv;
+    int fd;
 public:
     Bomber(int x, int y, int id, std::vector<std::string> argv);
     ~Bomber();
@@ -29,10 +30,12 @@ public:
     int getY() const;
     int getId() const;
     std::vector<std::string> getArgv();
+    int getFd() const;
     void setX(int x);
     void setY(int y);
     void setId(int id);
     void setArgv(std::vector<std::string> argv);
+    void setFd(int fd);
 };
 
 #endif //HW1_BOMBER_H

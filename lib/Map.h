@@ -19,6 +19,7 @@
 #include "../message.h"
 
 #define PIPE(fd) socketpair(AF_UNIX, SOCK_STREAM, PF_UNIX, fd)
+#define MAX_OBJECT_COUNT 24
 
 class Map {
 private:
@@ -45,6 +46,7 @@ public:
     void setBombers(std::vector<Bomber> bombers);
     void setBombs(std::vector<Bomb> bombs);
 
+    std::pair<int, std::vector<od>> seeBomber(int id);
     std::pair<int, int> moveBomber(int id, int targetX, int targetY);
     void killBomber(int id);
     int plantBomb(int bomberId, int radius, int durability);

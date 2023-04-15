@@ -11,7 +11,6 @@
 
 #include "lib/Bomber.h"
 #include "lib/Bomb.h"
-#include "lib/Obstacle.h"
 #include "lib/Inputs.h"
 #include "lib/Map.h"
 
@@ -58,6 +57,8 @@ int main() {
             if (res == -1 || message == NULL) continue;
 
             if (message->type == BOMB_EXPLODE) {
+                // TODO: consider the case where the bomb kills all the bombers.
+                // NOTE: in that case, the farthest bomber is going to win the game
                 bomberIdsToDestroy = map.explodeBomb(bomb.getX(), bomb.getY());
 
                 for (int j = 0; j < bomberIdsToDestroy.size(); j++) {
@@ -68,6 +69,17 @@ int main() {
                     bomberFds[bomberId] = -1;
                 }
             } else continue;
+        }
+
+
+        // BOMBER DEATHS
+        for (int i = 0; i < bomberIdsToDestroy.size(); i++) {
+            int bomberId = bomberIdsToDestroy[i];
+            int fd = bomberFds[bomberId];
+
+            close(fd);
+            bomberFds[bomberId] = -1;
+            map.killBomber(bomberId);
         }
 
 
@@ -112,18 +124,21 @@ int main() {
 
                 send_message(fd, outgoingMessage);
             } else if (message->type == BOMBER_SEE) {
-                // TODO: implement BOMBER_SEE
+                std::pair<int, std::vector<od>> seeResult = map.seeBomber(bomber.getId());
+                om* outgoingMessage = new om;
+                od* objects = new od[seeResult.first];
+
+                outgoingMessage->type = BOMBER_VISION;
+                outgoingMessage->data.object_count = seeResult.first;
+
+                send_message(fd, outgoingMessage);
+
+                for (int j = 0; j < seeResult.first; j++) {
+                    objects[j] = seeResult.second[j];
+                }
+
+                send_object_data(fd, seeResult.first, objects);
             }
-        }
-
-        // BOMBER DEATHS
-        for (int i = 0; i < bomberIdsToDestroy.size(); i++) {
-            int bomberId = bomberIdsToDestroy[i];
-            int fd = bomberFds[bomberId];
-
-            close(fd);
-            bomberFds[bomberId] = -1;
-            map.killBomber(bomberId);
         }
 
         sleep(1);

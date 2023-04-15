@@ -86,6 +86,84 @@ void Map::setBombers(std::vector<Bomber> bombers) {
     this->bombers = (bombers);
 }
 
+/**
+ * @brief this function returns an std::pair<int, std::vector<od>> object.\n
+ * the pair includes: the number of objects (bombers, bombs, obstacles) that the bomber can see and a vector of od objects.\n
+ * the bomber can see 3 block up, down, left and right of him. no diagonals\n
+ * @param id the id of the bomber
+ * @return std::pair<int, std::vector<od>> the pair includes: the number of objects (bombers, bombs, obstacles) that the bomber can see and a vector of od objects.
+ */
+std::pair<int, std::vector<od>> Map::seeBomber(int id) {
+    Bomber *bomber = NULL;
+    std::vector<od> objects;
+
+    for (size_t i = 0; i < this->bombers.size(); i++) {
+        if (this->bombers[i].getId() == id) {
+            bomber = &this->bombers[i];
+        }
+    }
+
+    if (bomber == NULL) {
+        return std::make_pair(0, objects);
+    }
+
+    for (size_t i = 0; i < this->obstacles.size(); i++) {
+        bool bomberCanSee = (
+            (this->obstacles[i].getX() >= bomber->getX() - 3 && this->obstacles[i].getX() <= bomber->getX() + 3 && bomber->getY() == this->obstacles[i].getY()) ||
+            (this->obstacles[i].getY() >= bomber->getY() - 3 && this->obstacles[i].getY() <= bomber->getY() + 3 && bomber->getX() == this->obstacles[i].getX())
+        );
+
+        if (bomberCanSee) {
+            od obstacleData;
+            coordinate coor;
+            coor.x = this->obstacles[i].getX();
+            coor.y = this->obstacles[i].getY();
+            obstacleData.type = OBSTACLE;
+            obstacleData.position = coor;
+
+            objects.push_back(obstacleData);
+        }
+    }
+
+    for (size_t i = 0; i < this->bombers.size(); i++) {
+        bool bomberCanSee = (
+            (this->bombers[i].getX() >= bomber->getX() - 3 && this->bombers[i].getX() <= bomber->getX() + 3 && bomber->getY() == this->bombers[i].getY()) ||
+            (this->bombers[i].getY() >= bomber->getY() - 3 && this->bombers[i].getY() <= bomber->getY() + 3 && bomber->getX() == this->bombers[i].getX())
+        );
+
+        if (bomberCanSee && this->bombers[i].getId() != bomber->getId()) {
+            od obstacleData;
+            coordinate coor;
+            coor.x = this->bombers[i].getX();
+            coor.y = this->bombers[i].getY();
+            obstacleData.type = BOMBER;
+            obstacleData.position = coor;
+
+            objects.push_back(obstacleData);
+        }
+    }
+
+    for (size_t i = 0; i < this->bombs.size(); i++) {
+        bool bomberCanSee = (
+            (this->bombs[i].getX() >= bomber->getX() - 3 && this->bombs[i].getX() <= bomber->getX() + 3 && bomber->getY() == this->bombs[i].getY()) ||
+            (this->bombs[i].getY() >= bomber->getY() - 3 && this->bombs[i].getY() <= bomber->getY() + 3 && bomber->getX() == this->bombs[i].getX())
+        );
+
+        if (bomberCanSee) {
+            od obstacleData;
+            coordinate coor;
+            coor.x = this->bombs[i].getX();
+            coor.y = this->bombs[i].getY();
+            obstacleData.type = BOMB;
+            obstacleData.position = coor;
+
+            objects.push_back(obstacleData);
+        }
+    }
+
+    return std::make_pair(objects.size(), objects);
+}
+
 std::pair<int, int> Map::moveBomber(int id, int targetX, int targetY) {
     Bomber *bomber = NULL;
 
@@ -130,6 +208,7 @@ std::pair<int, int> Map::moveBomber(int id, int targetX, int targetY) {
 }
 
 void Map::killBomber(int id) {
+    // TODO: send BOMBER_DIE message to bomber
     Bomber *bomber = NULL;
     std::vector<Bomber> newBombers;
 

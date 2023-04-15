@@ -144,8 +144,46 @@ int main() {
         sleep(1);
     }
 
-    // TODO: inform remaining bomber
-    // TODO: wait for remaining bombs
+    if (map.getBomberCount() == 1) {
+        om* outgoingMessage = new om;
+
+        outgoingMessage->type = BOMBER_WIN;
+
+        send_message(map.getBombers()[0].getFd(), outgoingMessage);
+    } else {
+        int winnerId = map.getLuckyWinnerId();
+
+        om* outgoingMessage = new om;
+
+        outgoingMessage->type = BOMBER_WIN;
+
+        send_message(map.getBombers()[winnerId].getFd(), outgoingMessage);
+
+        // the bomber were not removed from the map, so we have to do it manually here
+        map.killBomber(winnerId);
+    }
+
+    while (true) {
+        bool shouldBreak = true;
+
+        for (int i = 0; i < map.getBombCount(); i++) {
+            if (!map.getBombs()[i].getIsExploded()) {
+                int fd = bombFds[i];
+                im* message;
+                int res = read_data(fd, message);
+
+                shouldBreak = false;
+
+                if (res == -1 || message == NULL) continue;
+
+                if (message->type == BOMB_EXPLODE) {
+                    map.explodeBomb(map.getBombs()[i].getX(), map.getBombs()[i].getY());
+                } else continue;
+            } else continue;
+        }
+
+        if (shouldBreak) break;
+    }
 
     return 0;
 }

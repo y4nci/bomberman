@@ -36,6 +36,7 @@ Map::~Map() {
     this->obstacles.clear();
     this->bombers.clear();
     this->bombs.clear();
+    this->luckyWinnerId = -1;
 }
 
 int Map::getWidth() {
@@ -58,6 +59,10 @@ int Map::getBombCount() {
     return this->bombs.size();
 }
 
+int Map::getLuckyWinnerId() {
+    return this->luckyWinnerId;
+}
+
 std::vector<Obstacle> Map::getObstacles() {
     return this->obstacles;
 }
@@ -76,6 +81,10 @@ void Map::setWidth(int width) {
 
 void Map::setHeight(int height) {
     this->height = height;
+}
+
+void Map::setLuckyWinnerId(int luckyWinnerId) {
+    this->luckyWinnerId = luckyWinnerId;
 }
 
 void Map::setObstacles(std::vector<Obstacle> obstacles) {
@@ -272,9 +281,20 @@ int Map::plantBomb(int bomberId, int radius, int durability) {
  * @return the ids of the bombers that were killed
  */
 std::vector<int> Map::explodeBomb(int bombX, int bombY) {
+    /**
+     * if all the bombers die in this round, the farthest bomber from the bomb is going to win the game.\n
+     * if there are multiple bombers that are the same distance from the bomb, the bomber with the highest id wins.\n
+     * this is only because the bomber with the highest id is the last bomber in the vector, so is actually random.\n
+     * in order to keep the information about who won the game, we hold the distance and the id in variables.\n
+     *
+     * NOTE: their fd should also not be closed. that's because the bgame main function will close the fd of the bomber that won the game.
+     */
+
+    int lowestDistance = std::max(this->height, this->width), lowestDistanceBomberId = std::max(this->height, this->width);
+    int bombRadius, bombFd = -1;
+    int initialBomberCount = this->bombers.size();
     std::vector<int> killedBombers;
     std::vector<std::pair<int, int>> obstacleCoords;
-    int bombRadius, bombFd = -1;
 
     for (size_t i = 0; i < this->bombs.size(); i++) {
         if (this->bombs[i].getX() == bombX && this->bombs[i].getY() == bombY) {
@@ -315,8 +335,19 @@ std::vector<int> Map::explodeBomb(int bombX, int bombY) {
             }
 
             if (!obstacleInWay) {
+                if (this->bombers[i].getX() == bombX) {
+                    if (std::abs(this->bombers[i].getY() - bombY) <= lowestDistance) {
+                        lowestDistance = std::abs(this->bombers[i].getY() - bombY);
+                        lowestDistanceBomberId = this->bombers[i].getId();
+                    }
+                } else {
+                    if (std::abs(this->bombers[i].getX() - bombX) <= lowestDistance) {
+                        lowestDistance = std::abs(this->bombers[i].getX() - bombX);
+                        lowestDistanceBomberId = this->bombers[i].getId();
+                    }
+                }
+
                 killedBombers.push_back(this->bombers[i].getId());
-                this->killBomber(this->bombers[i].getId());
             }
         }
     }
@@ -339,6 +370,18 @@ std::vector<int> Map::explodeBomb(int bombX, int bombY) {
                 }
                 break;
             }
+        }
+    }
+
+    // set the lucky winner id
+    if (killedBombers.size() == initialBomberCount - 1) {
+        this->setLuckyWinnerId(lowestDistanceBomberId);
+    }
+
+    for (size_t i = 0; i < killedBombers.size(); i++) {
+        if (this->bombers[i].getId() != this->luckyWinnerId) {
+            // remove them from the map
+            this->killBomber(this->bombers[i].getId());
         }
     }
 
@@ -393,5 +436,5 @@ void forkProcesses(Map* map, std::vector<int>* fds) {
 // forkbomb
 
 bool isGameFinished(Map map) {
-    return (map.getBomberCount() == 1);
+    return (map.getBomberCount() <= 1);
 }

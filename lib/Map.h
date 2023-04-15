@@ -25,6 +25,8 @@ class Map {
 private:
     int width;
     int height;
+    // holds the id of the winner bomber who won in a round where everyone died
+    int luckyWinnerId;
     std::vector<Obstacle> obstacles;
     std::vector<Bomber> bombers;
     std::vector<Bomb> bombs;
@@ -36,12 +38,14 @@ public:
     int getObstacleCount();
     int getBomberCount();
     int getBombCount();
+    int getLuckyWinnerId();
     std::vector<Obstacle> getObstacles();
     std::vector<Bomber> getBombers();
     std::vector<Bomb> getBombs();
 
     void setWidth(int width);
     void setHeight(int height);
+    void setLuckyWinnerId(int luckyWinnerId);
     void setObstacles(std::vector<Obstacle> obstacles);
     void setBombers(std::vector<Bomber> bombers);
     void setBombs(std::vector<Bomb> bombs);

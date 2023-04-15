@@ -374,7 +374,7 @@ std::vector<int> Map::explodeBomb(int bombX, int bombY) {
     }
 
     // set the lucky winner id
-    if (killedBombers.size() == initialBomberCount - 1) {
+    if (killedBombers.size() == initialBomberCount) {
         this->setLuckyWinnerId(lowestDistanceBomberId);
     }
 

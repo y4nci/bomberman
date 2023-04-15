@@ -17,24 +17,22 @@ private:
     int x;
     int y;
     int radius;
-    int remainingTime;
+    bool isExploded;
     int fd;
 public:
-    Bomb(int x, int y, int radius, int durability);
+    Bomb(int x, int y, int radius);
     ~Bomb();
     int getX() const;
     int getY() const;
     int getRadius() const;
-    int getRemainingTime() const;
+    int getIsExploded() const;
     int getFd() const;
 
     void setX(int x);
     void setY(int y);
     void setRadius(int radius);
-    void setDurability(int remainingTime);
+    void setIsExploded(bool isExploded);
     void setFd(int fd);
-
-    void decrementTime();
 };
 
 #endif

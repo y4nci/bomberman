@@ -11,6 +11,8 @@
 
 #include "Bomb.h"
 #include "Obstacle.h"
+
+#include <algorithm>
 #include <unistd.h>
 #include <vector>
 #include <sys/socket.h>
@@ -32,6 +34,7 @@ public:
     int getHeight();
     int getObstacleCount();
     int getBomberCount();
+    int getBombCount();
     std::vector<Obstacle> getObstacles();
     std::vector<Bomber> getBombers();
     std::vector<Bomb> getBombs();
@@ -42,8 +45,10 @@ public:
     void setBombers(std::vector<Bomber> bombers);
     void setBombs(std::vector<Bomb> bombs);
 
-    void moveBomber(int id, int targetX, int targetY);
+    std::pair<int, int> moveBomber(int id, int targetX, int targetY);
+    void killBomber(int id);
     int plantBomb(int bomberId, int radius, int durability);
+    std::vector<int> explodeBomb(int bombX, int bombY);
 };
 
 // OTHER FUNCTIONS

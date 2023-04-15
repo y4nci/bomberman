@@ -11,11 +11,11 @@
 
 #include "Bomb.h"
 
-Bomb::Bomb(int x, int y, int radius, int durability) {
+Bomb::Bomb(int x, int y, int radius) {
     this->x = x;
     this->y = y;
     this->radius = radius;
-    this->remainingTime = durability;
+    this->isExploded = false;
 }
 
 Bomb::~Bomb() {
@@ -33,8 +33,8 @@ int Bomb::getRadius() const {
     return this->radius;
 }
 
-int Bomb::getRemainingTime() const {
-    return this->remainingTime;
+int Bomb::getIsExploded() const {
+    return this->isExploded;
 }
 
 int Bomb::getFd() const {
@@ -53,14 +53,10 @@ void Bomb::setRadius(int radius) {
     this->radius = radius;
 }
 
-void Bomb::setDurability(int durability) {
-    this->remainingTime = durability;
+void Bomb::setIsExploded(bool isExploded) {
+    this->isExploded = isExploded;
 }
 
 void Bomb::setFd(int fd) {
     this->fd = fd;
-}
-
-void Bomb::decrementTime() {
-    this->remainingTime--;
 }

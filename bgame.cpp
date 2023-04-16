@@ -83,8 +83,10 @@ int main() {
             if (res == -1 || message == NULL) continue;
 
             if (message->type == BOMB_EXPLODE) {
-                int luckyBomberId = map.getLuckyWinnerId();
+                int luckyBomberId;
+
                 bomberIdsToDestroy = map.explodeBomb(bomb.getX(), bomb.getY());
+                luckyBomberId = map.getLuckyWinnerId();
 
                 for (int j = 0; j < bomberIdsToDestroy.size(); j++) {
                     int bomberId = bomberIdsToDestroy[j];

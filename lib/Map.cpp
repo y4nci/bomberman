@@ -276,10 +276,9 @@ std::pair<int, int> Map::plantBomb(int bomberId, int radius, int durability) {
     bomb.setX(bomber->getX());
     bomb.setY(bomber->getY());
 
-    fd = createBombPipe(&bomb);
-    bombPID = forkBombProcess(this, bomberId, fd);
+    int pid = forkBombProcess(this, &bomb, bomberId);
 
-    bomb.setPID(bombPID);
+    bomb.setPID(pid);
 
     this->bombs.push_back(bomb);
 
@@ -418,26 +417,6 @@ std::vector<int> Map::explodeBomb(int bombX, int bombY) {
 
 
 
-std::vector<int> createBomberPipes(Map* map) {
-    std::vector<int> fds;
-
-    for (int i = 0; i < map->getBomberCount(); i++) {
-        int fd[2];
-        PIPE(fd);
-        fds.push_back(fd[0]);
-        map->getBombers()[i].setFd(fd[1]);
-    }
-
-    return fds;
-}
-
-int createBombPipe(Bomb* bomb) {
-    int fd[2];
-    PIPE(fd);
-    bomb->setFd(fd[1]);
-
-    return fd[0];
-}
 
 /**
  * Forks the bomber processes and returns their PIDs
@@ -449,32 +428,40 @@ std::vector<int> forkBomberProcesses(Map* map, std::vector<int>* fds) {
     std::vector<int> PIDs;
 
     for (int i = 0; i < map->getBomberCount(); i++) {
+        int fd[2];
+        PIPE(fd);
+        fds->push_back(fd[0]);
+        map->getBombers()[i].setFd(fd[1]);
+
         int pid = fork();
+        PIDs.push_back(pid);
+        map->getBombers()[i].setPID(pid);
 
         if (pid == 0) { // child
             char** argv = new char*[map->getBombers()[i].getArgv().size() + 1];
             for (size_t j = 0; j < map->getBombers()[i].getArgv().size(); j++) {
                 argv[j] = (char*) map->getBombers()[i].getArgv()[j].c_str();
             }
-            dup2(map->getBombers()[i].getFd(), STDIN_FILENO);
-            dup2(map->getBombers()[i].getFd(), STDOUT_FILENO);
+            dup2(fd[1], STDIN_FILENO);
+            dup2(fd[1], STDOUT_FILENO);
             argv[map->getBombers()[i].getArgv().size()] = NULL;
-            close((*fds)[i]); // CLOSE PARENT'S CHANNEL
+            close(fd[0]); // CLOSE PARENT'S CHANNEL
             execv(argv[0], argv);
 
             delete [] argv;
         } else {
-            PIDs.push_back(pid);
-            map->getBombers()[i].setPID(pid);
-            close(map->getBombers()[i].getFd()); // CLOSE CHILD'S CHANNEL
+            close(fd[1]); // CLOSE CHILD'S CHANNEL
         }
     }
 
     return PIDs;
 }
 
-int forkBombProcess(Map* map, int bomberId, int fd) {
+int forkBombProcess(Map* map, Bomb* bomb, int bomberId) {
     std::vector<std::string> bomberArgv = map->getBombers()[bomberId].getArgv();
+    int fd[2];
+    PIPE(fd);
+    bomb->setFd(fd[1]);
 
     int pid = fork();
 
@@ -483,16 +470,16 @@ int forkBombProcess(Map* map, int bomberId, int fd) {
         for (size_t j = 0; j < bomberArgv.size(); j++) {
             argv[j] = (char*) map->getBombers()[0].getArgv()[j].c_str();
         }
-        dup2(fd, STDIN_FILENO);
-        dup2(fd, STDOUT_FILENO);
+        dup2(fd[1], STDIN_FILENO);
+        dup2(fd[1], STDOUT_FILENO);
         argv[map->getBombers()[0].getArgv().size()] = NULL;
-        close(fd); // CLOSE PARENT'S CHANNEL
+        close(fd[0]); // CLOSE PARENT'S CHANNEL
         execv(argv[0], argv);
         // send_message(map->getBombers()[i].getFd(), (om*) BOMBER_START); THIS IS PROBABLY WRONG
 
         delete [] argv;
     } else {
-        close(fd); // CLOSE CHILD'S CHANNEL
+        close(fd[1]); // CLOSE CHILD'S CHANNEL
     }
 
     return pid;

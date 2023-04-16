@@ -67,9 +67,6 @@ public:
 
 
 
-std::vector<int> createBomberPipes(Map* map);
-int createBombPipe(Bomb* bomb);
-
 std::vector<int> forkBomberProcesses(Map* map, std::vector<int>* fds);
-int forkBombProcess(Map* map, int bomberId, int fd);
+int forkBombProcess(Map* map, Bomb* bomb, int bomberId);
 bool isGameFinished(Map map);

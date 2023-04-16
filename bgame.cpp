@@ -19,6 +19,10 @@
 #include "message.h"
 #include "logging.h"
 
+// DEBUG
+#include <iostream>
+// DEBUG
+
 #include <poll.h>
 
 int main() {
@@ -30,7 +34,7 @@ int main() {
      * by time, bombers die but these fd's are still in the vector, despite being closed.\n
      * So, we will refer them to with the bomber's id, which will act as an index.\n
      */
-    std::vector<int> bomberFds = createBomberPipes(&map);
+    std::vector<int> bomberFds;
 
     /**
      * holds parent's fd's for communicating with bombs.\n
@@ -50,8 +54,6 @@ int main() {
      */
     // vector<int> bombPIDs;
 
-    // cout << "ENTRY CHECKPOINT\n\n";
-
     while (!isGameFinished(map)) {
         /**
          * holds the ids of bombers that will die in this iteration.\n
@@ -59,28 +61,57 @@ int main() {
          */
         std::vector<int> bomberIdsToDestroy;
 
+        /**
+         * holds the ```struct pollfd``` objects for bombers and bombs.\n
+         * we will use these objects to poll the bombers and bombs.\n
+         * we will use the bomber's id as an index to refer to the bomber's fd.\n
+         * we may use the fd or the coordinates of the bombs as an index to refer to the bomb's fd.\n
+         * these vectors should be passed to the ```poll``` function and in return, the function will fill the\n
+         * ```revents``` field of the ```struct pollfd``` objects.\n
+         *
+         * TODO: do not forget to free the allocated memory for the ```struct pollfd``` objects.
+         */
+        std::vector<struct pollfd> bomberPollFds, bombPollFds;
+
+        for (int i = 0; i < map.getBombCount(); i++) {
+            struct pollfd pollFd;
+
+            pollFd.fd = bombFds[i];
+            pollFd.events = POLLIN;
+
+            bombPollFds.push_back(pollFd);
+        }
+
+        poll(bombPollFds.data(), bombPollFds.size(), 0);
+
         // BOMBS
         for (int i = 0; i < map.getBombCount(); i++) {
             Bomb bomb = map.getBombs()[i];
+
+            // DEBUG
+            // std::cout << "BOMB " << i << " CHECKPOINT\n\n";
+            // DEBUG
 
             if (bomb.getIsExploded()) {
                 continue;
             }
 
             int fd = bombFds[i];
-            im* message;
-            struct pollfd fdObj[1];
+            im* message = new im;
 
-            fdObj[0].fd = fd;
-            fdObj[0].events = POLLIN;
+            bool shouldRead = (bombPollFds[i].revents & POLLIN);
 
-            bool shouldRead = (poll(fdObj, POLLIN, 0) == 1);
+            // DEBUG
+            // std::cout << "BOMB " << i << " CHECKPOINT 2\n\n";
+            // std::cout << "BOMB " << i << " SHOULD READ: " << shouldRead << "\n\n";
+            // std::cout << "BOMB " << i << " revent: " << bombPollFds[i].revents << "\n\n";
+            // DEBUG
 
             if (!shouldRead) continue;
 
             int res = read_data(fd, message);
 
-            if (res == -1 || message == NULL) continue;
+            if (res == -1) continue;
 
             if (message->type == BOMB_EXPLODE) {
                 int luckyBomberId;
@@ -111,26 +142,46 @@ int main() {
             map.killBomber(bomberId);
         }
 
+        // POLL BOMBERS
+        for (int i = 0; i < map.getBomberCount(); i++) {
+            struct pollfd pollFd;
+
+            pollFd.fd = bomberFds[i];
+            pollFd.events = POLLIN;
+
+            bomberPollFds.push_back(pollFd);
+
+            // std::cout << "BOMBER POLLLL " << i << " FD: " << bomberFds[i] << "\n";
+        }
+        poll(bomberPollFds.data(), bomberPollFds.size(), 0);
 
         // BOMBERS
         for (int i = 0; i < map.getBomberCount(); i++) {
             Bomber bomber = map.getBombers()[i];
-            int fd = bomberFds[bomber.getId()];
-            im* message;
-            struct pollfd fdObj[1];
+            int fd = bomberFds[i];
+            im* message = new im;
 
-            fdObj[0].fd = fd;
-            fdObj[0].events = POLLIN;
+            bool shouldRead = (bomberPollFds[i].revents & POLLIN);
 
-            bool shouldRead = (poll(fdObj, POLLIN, 0) == 1);
+            // DEBUG
+            // std::cout << "BOMBER " << i << " CHECKPOINT 2\n";
+            // std::cout << "BOMBER " << i << " SHOULD READ: " << shouldRead << "\n";
+            // std::cout << "BOMBER " << i << " revent: " << bomberPollFds[i].revents << "\n";
+            // DEBUG
 
             if (!shouldRead) continue;
 
             int res = read_data(fd, message);
 
+            // DEBUG
+            // std::cout << "BOMBER " << i << " CHECKPOINT 3\n";
+            // std::cout << "BOMBER " << i << " RES: " << res << "\n";
+            // std::cout << "BOMBER " << i << " MESSAGE: " << message << "\n\n";
+            // DEBUG
+
             imp* printMessage = new imp;
 
-            if (res == -1 || message == NULL) continue;
+            if (res == -1) continue;
 
             if (message->type == BOMBER_MOVE) {
                 std::pair<int, int> newPosition = map.moveBomber(bomber.getId(), message->data.target_position.x, message->data.target_position.y);
@@ -145,7 +196,11 @@ int main() {
 
                 send_message(fd, outgoingMessage);
 
-                outputMessage->pid = bomber.getPID();
+                // DEBUG
+                // std::cout << bomberPIDs[bomber.getId()] << "\n";
+                // DEBUG
+
+                outputMessage->pid = bomberPIDs[bomber.getId()];
                 outputMessage->m = outgoingMessage;
 
                 print_output(NULL, outputMessage, NULL, NULL);
@@ -161,7 +216,7 @@ int main() {
 
                 send_message(fd, outgoingMessage);
 
-                outputMessage->pid = bomber.getPID();
+                outputMessage->pid = bomberPIDs[bomber.getId()];
                 outputMessage->m = outgoingMessage;
 
                 print_output(NULL, outputMessage, NULL, NULL);
@@ -178,7 +233,7 @@ int main() {
 
                 send_message(fd, outgoingMessage);
 
-                outputMessage->pid = bomber.getPID();
+                outputMessage->pid = bomberPIDs[bomber.getId()];
                 outputMessage->m = outgoingMessage;
 
                 print_output(NULL, outputMessage, NULL, NULL);
@@ -199,13 +254,13 @@ int main() {
 
                 send_object_data(fd, seeResult.first, objects);
 
-                outputMessage->pid = bomber.getPID();
+                outputMessage->pid = bomberPIDs[bomber.getId()];
                 outputMessage->m = outgoingMessage;
 
                 print_output(NULL, outputMessage, NULL, objects);
             }
 
-            printMessage->pid = bomber.getPID();
+            printMessage->pid = bomberPIDs[bomber.getId()];
             printMessage->m = message;
 
             print_output(printMessage, NULL, NULL, NULL);
@@ -235,19 +290,28 @@ int main() {
         close(bomberFds[winnerId]);
     }
 
+    std::vector<struct pollfd> bombPollFds;
+
+    for (int i = 0; i < map.getBombCount(); i++) {
+        struct pollfd pollFd;
+
+        pollFd.fd = bombFds[i];
+        pollFd.events = POLLIN;
+
+        bombPollFds.push_back(pollFd);
+    }
+
+    poll(bombPollFds.data(), bombPollFds.size(), 0);
+
     while (true) {
         bool shouldBreak = true;
 
         for (int i = 0; i < map.getBombCount(); i++) {
             if (!map.getBombs()[i].getIsExploded()) {
                 int fd = bombFds[i];
-                im* message;
-                struct pollfd fdObj[1];
+                im* message = new im;
 
-                fdObj[0].fd = fd;
-                fdObj[0].events = POLLIN;
-
-                bool shouldRead = (poll(fdObj, POLLIN, 0) == 1);
+                bool shouldRead = (bombPollFds[i].revents & POLLIN);
 
                 if (!shouldRead) continue;
 
@@ -255,7 +319,7 @@ int main() {
 
                 shouldBreak = false;
 
-                if (res == -1 || message == NULL) continue;
+                if (res == -1) continue;
 
                 if (message->type == BOMB_EXPLODE) {
                     map.explodeBomb(map.getBombs()[i].getX(), map.getBombs()[i].getY());

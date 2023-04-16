@@ -19,10 +19,6 @@
 #include "message.h"
 #include "logging.h"
 
-// DEBUG
-#include <iostream>
-// DEBUG
-
 #include <poll.h>
 
 int main() {
@@ -73,10 +69,6 @@ int main() {
          */
         std::vector<struct pollfd> bomberPollFds, bombPollFds;
 
-        // DEBUG
-        // std::cout << "ENTRY CHECKPOINT ill see the bomb fds" << bombFds.size() << "\n\n";
-        // DEBUG
-
         for (int i = 0; i < map.getBombCount(); i++) {
             struct pollfd pollFd;
 
@@ -96,10 +88,6 @@ int main() {
         for (int i = 0; i < map.getBombCount(); i++) {
             Bomb bomb = map.getBombs()[i];
 
-            // DEBUG
-            // std::cout << "BOMB " << i << " CHECKPOINT\n\n";
-            // DEBUG
-
             if (bomb.getIsExploded()) {
                 continue;
             }
@@ -110,35 +98,14 @@ int main() {
 
             bool shouldRead = (bombPollFds[i].revents & POLLIN);
 
-            // DEBUG
-            // std::cout << "BOMB " << i << " CHECKPOINT 2\n";
-            // std::cout << "BOMB " << i << " SHOULD READ: " << shouldRead << "\n";
-            // std::cout << "BOMB " << i << " revent: " << bombPollFds[i].revents << "\n";
-            // DEBUG
-
             if (!shouldRead) continue;
 
             int res = read_data(fd, message);
 
-            // DEBUG
-            std::cout << "dumahh hoe " << message->type << "\n";
-            std::cout << "gayass " << fd << "\n";
-            std::cout << "dumahh bih " << res << "\n";
-            // DEBUG
-
             if (res == -1) continue;
-
-            // DEBUG
-            // std::cout << "BOMB " << i << " CHECKPOINT 3\n";
-            // std::cout << "BOMB " << i << " MESSAGE TYPE: " << message->type << "\n";
-            // DEBUG
 
             if (message->type == BOMB_EXPLODE) {
                 int luckyBomberId;
-
-                // DEBUG
-                // std::cout << "AMBATAEXPLODE " << i << " \n";
-                // DEBUG
 
                 bomberIdsToDestroy = map.explodeBomb(bomb.getX(), bomb.getY(), &bombFds);
                 luckyBomberId = map.getLuckyWinnerId();
@@ -187,21 +154,9 @@ int main() {
 
             bool shouldRead = (bomberPollFds[i].revents & POLLIN);
 
-            // DEBUG
-            // std::cout << "BOMBER " << i << " CHECKPOINT 2\n";
-            // std::cout << "BOMBER " << i << " SHOULD READ: " << shouldRead << "\n";
-            // std::cout << "BOMBER " << i << " revent: " << bomberPollFds[i].revents << "\n";
-            // DEBUG
-
             if (!shouldRead) continue;
 
             int res = read_data(fd, message);
-
-            // DEBUG
-            // std::cout << "BOMBER " << i << " CHECKPOINT 3\n";
-            // std::cout << "BOMBER " << i << " RES: " << res << "\n";
-            // std::cout << "BOMBER " << i << " MESSAGE: " << message << "\n\n";
-            // DEBUG
 
             imp* printMessage = new imp;
 
@@ -219,10 +174,6 @@ int main() {
                 outgoingMessage->data.new_position = coor;
 
                 send_message(fd, outgoingMessage);
-
-                // DEBUG
-                // std::cout << bomberPIDs[bomber.getId()] << "\n";
-                // DEBUG
 
                 outputMessage->pid = bomberPIDs[bomber.getId()];
                 outputMessage->m = outgoingMessage;

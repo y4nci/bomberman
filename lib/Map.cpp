@@ -12,10 +12,6 @@
 #include "Map.h"
 #include "../logging.h"
 
-// DEBUG
-#include <iostream>
-// DEBUG
-
 Map::Map(int width, int height, std::vector<ObstacleInput> obstacleInputs, std::vector<BomberInput> bomberInputs) {
     int bomberId = 0;
 
@@ -282,11 +278,6 @@ std::pair<int, int> Map::plantBomb(int bomberId, int radius, int durability) {
 
     int pid = forkBombProcess(this, &bomb, bomberId);
 
-    // DEBUG
-    std::cout << "bomb planted at " << bomb.getX() << " " << bomb.getY() << std::endl;
-    std::cout << "bomb pid: " << pid << " bomb fd: " << bomb.getFd() << std::endl;
-    // DEBUG
-
     bomb.setPID(pid);
 
     this->bombs.push_back(bomb);
@@ -460,7 +451,7 @@ std::vector<int> forkBomberProcesses(Map* map, std::vector<int>* fds) {
             argv[map->getBombers()[i].getArgv().size()] = NULL;
             execv(argv[0], argv);
 
-            delete [] argv;
+            // delete [] argv;
         } else {
             close(fd[1]); // CLOSE CHILD'S CHANNEL
         }
@@ -482,6 +473,8 @@ int forkBombProcess(Map* map, Bomb* bomb, int bomberId) {
     if (pid == 0) { // child
         close(fd[0]); // CLOSE PARENT'S CHANNEL
         char** argv = new char*[bomberArgv.size() + 1];
+
+        bomberArgv[0] = "./bomb";
         for (size_t j = 0; j < bomberArgv.size(); j++) {
             argv[j] = (char*) bomberArgv[j].c_str();
         }
@@ -491,7 +484,7 @@ int forkBombProcess(Map* map, Bomb* bomb, int bomberId) {
         execv(argv[0], argv);
         // send_message(map->getBombers()[i].getFd(), (om*) BOMBER_START); THIS IS PROBABLY WRONG
 
-        delete [] argv;
+        // delete [] argv;
     } else {
         close(fd[1]); // CLOSE CHILD'S CHANNEL
     }

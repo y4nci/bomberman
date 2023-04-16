@@ -19,6 +19,8 @@
 #include "message.h"
 #include "logging.h"
 
+#include <poll.h>
+
 int main() {
     Inputs inputs;
     Map map (inputs.getMapWidth(), inputs.getMapHeight(), inputs.getObstacleInputs(), inputs.getBomberInputs());
@@ -40,13 +42,15 @@ int main() {
      * holds the PIDs of the bombers.\n
      * used in outputting.
      */
-    // std::vector<int> bomberPIDs = forkBomberProcesses(&map, &bomberFds);
+    std::vector<int> bomberPIDs = forkBomberProcesses(&map, &bomberFds);
 
     /**
      * holds the PIDs of the bombs.\n
      * used in outputting.
      */
-    // std::vector<int> bombPIDs;
+    // vector<int> bombPIDs;
+
+    // cout << "ENTRY CHECKPOINT\n\n";
 
     while (!isGameFinished(map)) {
         /**
@@ -65,6 +69,15 @@ int main() {
 
             int fd = bombFds[i];
             im* message;
+            struct pollfd fdObj[1];
+
+            fdObj[0].fd = fd;
+            fdObj[0].events = POLLIN;
+
+            bool shouldRead = (poll(fdObj, POLLIN, 0) == 1);
+
+            if (!shouldRead) continue;
+
             int res = read_data(fd, message);
 
             if (res == -1 || message == NULL) continue;
@@ -101,6 +114,15 @@ int main() {
             Bomber bomber = map.getBombers()[i];
             int fd = bomberFds[bomber.getId()];
             im* message;
+            struct pollfd fdObj[1];
+
+            fdObj[0].fd = fd;
+            fdObj[0].events = POLLIN;
+
+            bool shouldRead = (poll(fdObj, POLLIN, 0) == 1);
+
+            if (!shouldRead) continue;
+
             int res = read_data(fd, message);
 
             imp* printMessage = new imp;

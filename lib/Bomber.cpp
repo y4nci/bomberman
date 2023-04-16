@@ -35,6 +35,10 @@ int Bomber::getId() const {
     return this->id;
 }
 
+int Bomber::getPID() const {
+    return this->PID;
+}
+
 std::vector<std::string> Bomber::getArgv() {
     return this->argv;
 }
@@ -53,6 +57,10 @@ void Bomber::setY(int y) {
 
 void Bomber::setId(int id) {
     this->id = id;
+}
+
+void Bomber::setPID(int PID) {
+    this->PID = PID;
 }
 
 void Bomber::setArgv(std::vector<std::string> argv) {

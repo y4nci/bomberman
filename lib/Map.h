@@ -53,15 +53,23 @@ public:
     std::pair<int, std::vector<od>> seeBomber(int id);
     std::pair<int, int> moveBomber(int id, int targetX, int targetY);
     void killBomber(int id);
-    int plantBomb(int bomberId, int radius, int durability);
+    std::pair<int, int> plantBomb(int bomberId, int radius, int durability);
     std::vector<int> explodeBomb(int bombX, int bombY);
 };
 
-// OTHER FUNCTIONS
+
+
+//
+//
+// ---------------------------------------- OTHER FUNCTIONS ----------------------------------------
+//
+//
+
+
 
 std::vector<int> createBomberPipes(Map* map);
 int createBombPipe(Bomb* bomb);
 
-void forkProcesses(Map* map, std::vector<int>* fds);
-void forkBomb();
+std::vector<int> forkBomberProcesses(Map* map, std::vector<int>* fds);
+int forkBombProcess(Map* map, int bomberId, int fd);
 bool isGameFinished(Map map);

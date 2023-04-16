@@ -33,7 +33,17 @@ int main() {
      */
     std::vector<int> bombFds;
 
-    forkProcesses(&map, &bomberFds);
+    /**
+     * holds the PIDs of the bombers.\n
+     * used in outputting.
+     */
+    // std::vector<int> bomberPIDs = forkBomberProcesses(&map, &bomberFds);
+
+    /**
+     * holds the PIDs of the bombs.\n
+     * used in outputting.
+     */
+    // std::vector<int> bombPIDs;
 
     while (!isGameFinished(map)) {
         /**
@@ -104,7 +114,8 @@ int main() {
 
                 send_message(fd, outgoingMessage);
             } else if (message->type == BOMBER_PLANT) {
-                int bombFd = map.plantBomb(bomber.getId(), message->data.bomb_info.radius, message->data.bomb_info.interval);
+                std::pair<int, int> plantData = map.plantBomb(bomber.getId(), message->data.bomb_info.radius, message->data.bomb_info.interval);
+                int bombFd = plantData.first, bombPID = plantData.second;
                 bool plantSuccessful = bombFd != -1;
                 om* outgoingMessage = new om;
 

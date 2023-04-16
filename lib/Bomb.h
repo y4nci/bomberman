@@ -19,6 +19,7 @@ private:
     int radius;
     bool isExploded;
     int fd;
+    int PID;
 public:
     Bomb(int x, int y, int radius);
     ~Bomb();
@@ -27,12 +28,14 @@ public:
     int getRadius() const;
     int getIsExploded() const;
     int getFd() const;
+    int getPID() const;
 
     void setX(int x);
     void setY(int y);
     void setRadius(int radius);
     void setIsExploded(bool isExploded);
     void setFd(int fd);
+    void setPID(int PID);
 };
 
 #endif

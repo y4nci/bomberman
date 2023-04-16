@@ -41,6 +41,10 @@ int Bomb::getFd() const {
     return this->fd;
 }
 
+int Bomb::getPID() const {
+    return this->PID;
+}
+
 void Bomb::setX(int x) {
     this->x = x;
 }
@@ -59,4 +63,8 @@ void Bomb::setIsExploded(bool isExploded) {
 
 void Bomb::setFd(int fd) {
     this->fd = fd;
+}
+
+void Bomb::setPID(int PID) {
+    this->PID = PID;
 }

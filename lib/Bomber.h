@@ -21,6 +21,7 @@ private:
     int x;
     int y;
     int id;
+    int PID;
     std::vector<std::string> argv;
     int fd;
 public:
@@ -29,11 +30,13 @@ public:
     int getX() const;
     int getY() const;
     int getId() const;
+    int getPID() const;
     std::vector<std::string> getArgv();
     int getFd() const;
     void setX(int x);
     void setY(int y);
     void setId(int id);
+    void setPID(int PID);
     void setArgv(std::vector<std::string> argv);
     void setFd(int fd);
 };

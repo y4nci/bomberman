@@ -246,10 +246,17 @@ void Map::setBombs(std::vector<Bomb> bombs) {
     this->bombs = (bombs);
 }
 
-int Map::plantBomb(int bomberId, int radius, int durability) {
+/**
+ * creates pipes, forks and starts bomb process
+ * @param bomberId id of bomber who planted the bomb
+ * @param radius
+ * @param durability
+ * @return a pair of fd and pid of bomb process, respectively
+ */
+std::pair<int, int> Map::plantBomb(int bomberId, int radius, int durability) {
     Bomber *bomber = NULL;
     Bomb bomb (0, 0,radius);
-    int fd;
+    int fd, bombPID;
 
     for (size_t i = 0; i < this->bombers.size(); i++) {
         if (this->bombers[i].getId() == bomberId) {
@@ -259,7 +266,7 @@ int Map::plantBomb(int bomberId, int radius, int durability) {
 
     for (size_t i = 0; i < this->bombs.size(); i++) {
         if (this->bombs[i].getX() == bomber->getX() && this->bombs[i].getY() == bomber->getY()) {
-            return -1;
+            return std::make_pair(-1, -1);
         }
     }
 
@@ -267,10 +274,13 @@ int Map::plantBomb(int bomberId, int radius, int durability) {
     bomb.setY(bomber->getY());
 
     fd = createBombPipe(&bomb);
+    bombPID = forkBombProcess(this, bomberId, fd);
+
+    bomb.setPID(bombPID);
 
     this->bombs.push_back(bomb);
 
-    return fd;
+    return std::make_pair(fd, bombPID);
 }
 
 /**
@@ -388,7 +398,15 @@ std::vector<int> Map::explodeBomb(int bombX, int bombY) {
     return killedBombers;
 }
 
-// OTHER FUNCTIONS
+
+
+//
+//
+// ---------------------------------------- OTHER FUNCTIONS ----------------------------------------
+//
+//
+
+
 
 std::vector<int> createBomberPipes(Map* map) {
     std::vector<int> fds;
@@ -411,9 +429,12 @@ int createBombPipe(Bomb* bomb) {
     return fd[0];
 }
 
-void forkProcesses(Map* map, std::vector<int>* fds) {
+std::vector<int> forkBomberProcesses(Map* map, std::vector<int>* fds) {
+    std::vector<int> PIDs;
+
     for (int i = 0; i < map->getBomberCount(); i++) {
         int pid = fork();
+
         if (pid == 0) { // child
             char** argv = new char*[map->getBombers()[i].getArgv().size() + 1];
             for (size_t j = 0; j < map->getBombers()[i].getArgv().size(); j++) {
@@ -428,12 +449,39 @@ void forkProcesses(Map* map, std::vector<int>* fds) {
 
             delete [] argv;
         } else {
+            PIDs.push_back(pid);
+            map->getBombers()[i].setPID(pid);
             close(map->getBombers()[i].getFd()); // CLOSE CHILD'S CHANNEL
         }
     }
+
+    return PIDs;
 }
 
-// forkbomb
+int forkBombProcess(Map* map, int bomberId, int fd) {
+    std::vector<std::string> bomberArgv = map->getBombers()[bomberId].getArgv();
+
+    int pid = fork();
+
+    if (pid == 0) { // child
+        char** argv = new char*[bomberArgv.size() + 1];
+        for (size_t j = 0; j < bomberArgv.size(); j++) {
+            argv[j] = (char*) map->getBombers()[0].getArgv()[j].c_str();
+        }
+        dup2(fd, STDIN_FILENO);
+        dup2(fd, STDOUT_FILENO);
+        argv[map->getBombers()[0].getArgv().size()] = NULL;
+        close(fd); // CLOSE PARENT'S CHANNEL
+        execv(argv[0], argv);
+        // send_message(map->getBombers()[i].getFd(), (om*) BOMBER_START); THIS IS PROBABLY WRONG
+
+        delete [] argv;
+    } else {
+        close(fd); // CLOSE CHILD'S CHANNEL
+    }
+
+    return pid;
+}
 
 bool isGameFinished(Map map) {
     return (map.getBomberCount() <= 1);

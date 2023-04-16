@@ -231,6 +231,8 @@ int main() {
 
         // the bomber were not removed from the map, so we have to do it manually here
         map.killBomber(winnerId);
+
+        close(bomberFds[winnerId]);
     }
 
     while (true) {
@@ -240,6 +242,15 @@ int main() {
             if (!map.getBombs()[i].getIsExploded()) {
                 int fd = bombFds[i];
                 im* message;
+                struct pollfd fdObj[1];
+
+                fdObj[0].fd = fd;
+                fdObj[0].events = POLLIN;
+
+                bool shouldRead = (poll(fdObj, POLLIN, 0) == 1);
+
+                if (!shouldRead) continue;
+
                 int res = read_data(fd, message);
 
                 shouldBreak = false;

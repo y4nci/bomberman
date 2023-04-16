@@ -73,10 +73,18 @@ int main() {
          */
         std::vector<struct pollfd> bomberPollFds, bombPollFds;
 
+        // DEBUG
+        // std::cout << "ENTRY CHECKPOINT ill see the bomb fds" << bombFds.size() << "\n\n";
+        // DEBUG
+
         for (int i = 0; i < map.getBombCount(); i++) {
             struct pollfd pollFd;
 
-            pollFd.fd = bombFds[i];
+            if (map.getBombs()[i].getIsExploded()) {
+                continue;
+            }
+
+            pollFd.fd = map.getBombs()[i].getFd();
             pollFd.events = POLLIN;
 
             bombPollFds.push_back(pollFd);
@@ -96,27 +104,43 @@ int main() {
                 continue;
             }
 
-            int fd = bombFds[i];
+            int fd = bomb.getFd();
+
             im* message = new im;
 
             bool shouldRead = (bombPollFds[i].revents & POLLIN);
 
             // DEBUG
-            // std::cout << "BOMB " << i << " CHECKPOINT 2\n\n";
-            // std::cout << "BOMB " << i << " SHOULD READ: " << shouldRead << "\n\n";
-            // std::cout << "BOMB " << i << " revent: " << bombPollFds[i].revents << "\n\n";
+            // std::cout << "BOMB " << i << " CHECKPOINT 2\n";
+            // std::cout << "BOMB " << i << " SHOULD READ: " << shouldRead << "\n";
+            // std::cout << "BOMB " << i << " revent: " << bombPollFds[i].revents << "\n";
             // DEBUG
 
             if (!shouldRead) continue;
 
             int res = read_data(fd, message);
 
+            // DEBUG
+            std::cout << "dumahh hoe " << message->type << "\n";
+            std::cout << "gayass " << fd << "\n";
+            std::cout << "dumahh bih " << res << "\n";
+            // DEBUG
+
             if (res == -1) continue;
+
+            // DEBUG
+            // std::cout << "BOMB " << i << " CHECKPOINT 3\n";
+            // std::cout << "BOMB " << i << " MESSAGE TYPE: " << message->type << "\n";
+            // DEBUG
 
             if (message->type == BOMB_EXPLODE) {
                 int luckyBomberId;
 
-                bomberIdsToDestroy = map.explodeBomb(bomb.getX(), bomb.getY());
+                // DEBUG
+                // std::cout << "AMBATAEXPLODE " << i << " \n";
+                // DEBUG
+
+                bomberIdsToDestroy = map.explodeBomb(bomb.getX(), bomb.getY(), &bombFds);
                 luckyBomberId = map.getLuckyWinnerId();
 
                 for (int j = 0; j < bomberIdsToDestroy.size(); j++) {
@@ -295,6 +319,10 @@ int main() {
     for (int i = 0; i < map.getBombCount(); i++) {
         struct pollfd pollFd;
 
+        if (map.getBombs()[i].getIsExploded()) {
+            continue;
+        }
+
         pollFd.fd = bombFds[i];
         pollFd.events = POLLIN;
 
@@ -322,7 +350,7 @@ int main() {
                 if (res == -1) continue;
 
                 if (message->type == BOMB_EXPLODE) {
-                    map.explodeBomb(map.getBombs()[i].getX(), map.getBombs()[i].getY());
+                    map.explodeBomb(map.getBombs()[i].getX(), map.getBombs()[i].getY(), &bombFds);
                 } else continue;
             } else continue;
         }

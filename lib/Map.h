@@ -54,7 +54,7 @@ public:
     std::pair<int, int> moveBomber(int id, int targetX, int targetY);
     void killBomber(int id);
     std::pair<int, int> plantBomb(int bomberId, int radius, int durability);
-    std::vector<int> explodeBomb(int bombX, int bombY);
+    std::vector<int> explodeBomb(int bombX, int bombY, std::vector<int> *fds);
 };
 
 

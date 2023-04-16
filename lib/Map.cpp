@@ -12,6 +12,10 @@
 #include "Map.h"
 #include "../logging.h"
 
+// DEBUG
+#include <iostream>
+// DEBUG
+
 Map::Map(int width, int height, std::vector<ObstacleInput> obstacleInputs, std::vector<BomberInput> bomberInputs) {
     int bomberId = 0;
 
@@ -278,11 +282,16 @@ std::pair<int, int> Map::plantBomb(int bomberId, int radius, int durability) {
 
     int pid = forkBombProcess(this, &bomb, bomberId);
 
+    // DEBUG
+    std::cout << "bomb planted at " << bomb.getX() << " " << bomb.getY() << std::endl;
+    std::cout << "bomb pid: " << pid << " bomb fd: " << bomb.getFd() << std::endl;
+    // DEBUG
+
     bomb.setPID(pid);
 
     this->bombs.push_back(bomb);
 
-    return std::make_pair(fd, bombPID);
+    return std::make_pair(bomb.getFd(), bombPID);
 }
 
 /**
@@ -292,7 +301,7 @@ std::pair<int, int> Map::plantBomb(int bomberId, int radius, int durability) {
  * @param bombY y coordinate of the bomb
  * @return the ids of the bombers that were killed
  */
-std::vector<int> Map::explodeBomb(int bombX, int bombY) {
+std::vector<int> Map::explodeBomb(int bombX, int bombY, std::vector<int> *fds) {
     /**
      * if all the bombers die in this round, the farthest bomber from the bomb is going to win the game.\n
      * if there are multiple bombers that are the same distance from the bomb, the bomber with the highest id wins.\n
@@ -303,20 +312,21 @@ std::vector<int> Map::explodeBomb(int bombX, int bombY) {
      */
 
     int lowestDistance = std::max(this->height, this->width), lowestDistanceBomberId = std::max(this->height, this->width);
-    int bombRadius, bombFd = -1;
+    int bombRadius, bombFd;
     int initialBomberCount = this->bombers.size();
     std::vector<int> killedBombers;
     std::vector<std::pair<int, int>> obstacleCoords;
 
     for (size_t i = 0; i < this->bombs.size(); i++) {
         if (this->bombs[i].getX() == bombX && this->bombs[i].getY() == bombY) {
+            bombFd = (*fds)[i];
+
             if (this->bombs[i].getIsExploded()) {
                 return killedBombers;
             }
 
             bombRadius = this->bombs[i].getRadius();
-            bombFd = this->bombs[i].getFd();
-            close(bombFd);
+            // bombFd = this->bombs[i].getFd();
             this->bombs[i].setIsExploded(true);
 
             break;
@@ -404,6 +414,8 @@ std::vector<int> Map::explodeBomb(int bombX, int bombY) {
         }
     }
 
+    close(bombFd);
+
     return killedBombers;
 }
 
@@ -438,6 +450,7 @@ std::vector<int> forkBomberProcesses(Map* map, std::vector<int>* fds) {
         map->getBombers()[i].setPID(pid);
 
         if (pid == 0) { // child
+            close(fd[0]); // CLOSE PARENT'S CHANNEL
             char** argv = new char*[map->getBombers()[i].getArgv().size() + 1];
             for (size_t j = 0; j < map->getBombers()[i].getArgv().size(); j++) {
                 argv[j] = (char*) map->getBombers()[i].getArgv()[j].c_str();
@@ -445,7 +458,6 @@ std::vector<int> forkBomberProcesses(Map* map, std::vector<int>* fds) {
             dup2(fd[1], STDIN_FILENO);
             dup2(fd[1], STDOUT_FILENO);
             argv[map->getBombers()[i].getArgv().size()] = NULL;
-            close(fd[0]); // CLOSE PARENT'S CHANNEL
             execv(argv[0], argv);
 
             delete [] argv;
@@ -461,19 +473,21 @@ int forkBombProcess(Map* map, Bomb* bomb, int bomberId) {
     std::vector<std::string> bomberArgv = map->getBombers()[bomberId].getArgv();
     int fd[2];
     PIPE(fd);
-    bomb->setFd(fd[1]);
+
+    // NOTE: unlike the bomber processes, the bomb obj holds the controller's fd in itself in map.
+    bomb->setFd(fd[0]);
 
     int pid = fork();
 
     if (pid == 0) { // child
+        close(fd[0]); // CLOSE PARENT'S CHANNEL
         char** argv = new char*[bomberArgv.size() + 1];
         for (size_t j = 0; j < bomberArgv.size(); j++) {
-            argv[j] = (char*) map->getBombers()[0].getArgv()[j].c_str();
+            argv[j] = (char*) bomberArgv[j].c_str();
         }
         dup2(fd[1], STDIN_FILENO);
         dup2(fd[1], STDOUT_FILENO);
-        argv[map->getBombers()[0].getArgv().size()] = NULL;
-        close(fd[0]); // CLOSE PARENT'S CHANNEL
+        argv[bomberArgv.size()] = NULL;
         execv(argv[0], argv);
         // send_message(map->getBombers()[i].getFd(), (om*) BOMBER_START); THIS IS PROBABLY WRONG
 

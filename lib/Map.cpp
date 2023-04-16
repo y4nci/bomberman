@@ -437,6 +437,12 @@ int createBombPipe(Bomb* bomb) {
     return fd[0];
 }
 
+/**
+ * Forks the bomber processes and returns their PIDs
+ * @param map the map instance
+ * @param fds the fds the parent process (controller) holds. comes from main in bgame
+ * @return PIDs of the bomber processes
+ */
 std::vector<int> forkBomberProcesses(Map* map, std::vector<int>* fds) {
     std::vector<int> PIDs;
 
@@ -453,7 +459,6 @@ std::vector<int> forkBomberProcesses(Map* map, std::vector<int>* fds) {
             argv[map->getBombers()[i].getArgv().size()] = NULL;
             close((*fds)[i]); // CLOSE PARENT'S CHANNEL
             execv(argv[0], argv);
-            // send_message(map->getBombers()[i].getFd(), (om*) BOMBER_START); THIS IS PROBABLY WRONG
 
             delete [] argv;
         } else {

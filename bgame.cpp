@@ -9,12 +9,15 @@
  *
  */
 
+// TODO: check the allocated memory for the messages.
+
 #include "lib/Bomber.h"
 #include "lib/Bomb.h"
 #include "lib/Inputs.h"
 #include "lib/Map.h"
 
 #include "message.h"
+#include "logging.h"
 
 int main() {
     Inputs inputs;
@@ -100,6 +103,8 @@ int main() {
             im* message;
             int res = read_data(fd, message);
 
+            imp* printMessage = new imp;
+
             if (res == -1 || message == NULL) continue;
 
             if (message->type == BOMBER_MOVE) {
@@ -107,37 +112,56 @@ int main() {
 
                 coordinate coor;
                 om* outgoingMessage = new om;
+                omp* outputMessage = new omp;
 
                 coor.x = newPosition.first; coor.y = newPosition.second;
                 outgoingMessage->type = BOMBER_LOCATION;
                 outgoingMessage->data.new_position = coor;
 
                 send_message(fd, outgoingMessage);
+
+                outputMessage->pid = bomber.getPID();
+                outputMessage->m = outgoingMessage;
+
+                print_output(NULL, outputMessage, NULL, NULL);
             } else if (message->type == BOMBER_PLANT) {
                 std::pair<int, int> plantData = map.plantBomb(bomber.getId(), message->data.bomb_info.radius, message->data.bomb_info.interval);
                 int bombFd = plantData.first, bombPID = plantData.second;
                 bool plantSuccessful = bombFd != -1;
                 om* outgoingMessage = new om;
+                omp* outputMessage = new omp;
 
                 outgoingMessage->type = BOMBER_PLANT_RESULT;
                 outgoingMessage->data.planted = plantSuccessful;
 
                 send_message(fd, outgoingMessage);
 
+                outputMessage->pid = bomber.getPID();
+                outputMessage->m = outgoingMessage;
+
+                print_output(NULL, outputMessage, NULL, NULL);
+
                 if (plantSuccessful) bombFds.push_back(bombFd);
             } else if (message->type == BOMBER_START) {
                 coordinate coor;
                 om* outgoingMessage = new om;
+                omp* outputMessage = new omp;
 
                 coor.x = bomber.getX(); coor.y = bomber.getY();
                 outgoingMessage->type = BOMBER_LOCATION;
                 outgoingMessage->data.new_position = coor;
 
                 send_message(fd, outgoingMessage);
+
+                outputMessage->pid = bomber.getPID();
+                outputMessage->m = outgoingMessage;
+
+                print_output(NULL, outputMessage, NULL, NULL);
             } else if (message->type == BOMBER_SEE) {
                 std::pair<int, std::vector<od>> seeResult = map.seeBomber(bomber.getId());
                 om* outgoingMessage = new om;
                 od* objects = new od[seeResult.first];
+                omp* outputMessage = new omp;
 
                 outgoingMessage->type = BOMBER_VISION;
                 outgoingMessage->data.object_count = seeResult.first;
@@ -149,7 +173,17 @@ int main() {
                 }
 
                 send_object_data(fd, seeResult.first, objects);
+
+                outputMessage->pid = bomber.getPID();
+                outputMessage->m = outgoingMessage;
+
+                print_output(NULL, outputMessage, NULL, objects);
             }
+
+            printMessage->pid = bomber.getPID();
+            printMessage->m = message;
+
+            print_output(printMessage, NULL, NULL, NULL);
         }
 
         sleep(1);

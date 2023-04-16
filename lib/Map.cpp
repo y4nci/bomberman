@@ -10,6 +10,7 @@
  */
 
 #include "Map.h"
+#include "../logging.h"
 
 Map::Map(int width, int height, std::vector<ObstacleInput> obstacleInputs, std::vector<BomberInput> bomberInputs) {
     int bomberId = 0;
@@ -369,11 +370,18 @@ std::vector<int> Map::explodeBomb(int bombX, int bombY) {
     for (size_t i = 0; i < obstacleCoords.size(); i++) {
         for (size_t j = 0; j < this->obstacles.size(); j++) {
             if (this->obstacles[j].getX() == obstacleCoords[i].first && this->obstacles[j].getY() == obstacleCoords[i].second) {
+                obsd* obstacleData = new obsd;
+                obstacleData->position.x = obstacleCoords[i].first;
+                obstacleData->position.y = obstacleCoords[i].second;
+
                 if (this->obstacles[j].getDurability() == -1) {
                     continue;
                 }
 
                 this->obstacles[j].decreaseDurability(1);
+
+                obstacleData->remaining_durability = this->obstacles[j].getDurability();
+                print_output(NULL, NULL, obstacleData, NULL);
 
                 if (this->obstacles[j].getDurability() == 0) {
                     this->obstacles.erase(this->obstacles.begin() + j);

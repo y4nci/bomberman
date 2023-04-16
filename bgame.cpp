@@ -219,7 +219,7 @@ int main() {
 
         outgoingMessage->type = BOMBER_WIN;
 
-        send_message(map.getBombers()[0].getFd(), outgoingMessage);
+        send_message(bomberFds[map.getBombers()[0].getId()], outgoingMessage);
     } else {
         int winnerId = map.getLuckyWinnerId();
 
@@ -227,7 +227,7 @@ int main() {
 
         outgoingMessage->type = BOMBER_WIN;
 
-        send_message(map.getBombers()[winnerId].getFd(), outgoingMessage);
+        send_message(bomberFds[map.getBombers()[0].getId()], outgoingMessage);
 
         // the bomber were not removed from the map, so we have to do it manually here
         map.killBomber(winnerId);

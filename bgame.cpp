@@ -83,13 +83,14 @@ int main() {
             if (res == -1 || message == NULL) continue;
 
             if (message->type == BOMB_EXPLODE) {
-                // TODO: consider the case where the bomb kills all the bombers.
-                // NOTE: in that case, the farthest bomber is going to win the game
+                int luckyBomberId = map.getLuckyWinnerId();
                 bomberIdsToDestroy = map.explodeBomb(bomb.getX(), bomb.getY());
 
                 for (int j = 0; j < bomberIdsToDestroy.size(); j++) {
                     int bomberId = bomberIdsToDestroy[j];
                     int bomberFd = bomberFds[bomberId];
+
+                    if (bomberId == luckyBomberId) continue;
 
                     close(bomberFd);
                     bomberFds[bomberId] = -1;

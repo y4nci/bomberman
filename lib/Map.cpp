@@ -17,6 +17,7 @@ Map::Map(int width, int height, std::vector<ObstacleInput> obstacleInputs, std::
 
     this->width = width;
     this->height = height;
+    this->luckyWinnerId = -1;
 
     for (size_t i = 0; i < obstacleInputs.size(); i++) {
         Obstacle obstacle(obstacleInputs[i].x, obstacleInputs[i].y, obstacleInputs[i].durability);
@@ -240,7 +241,8 @@ void Map::killBomber(int id) {
 
     this->bombers = newBombers;
 
-    close(bomber->getFd());
+    // the fd is already closed during fork
+    // close(bomber->getFd());
 }
 
 void Map::setBombs(std::vector<Bomb> bombs) {

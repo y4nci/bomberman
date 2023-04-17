@@ -17,6 +17,7 @@ Bomber::Bomber(int x, int y, int id, std::vector<std::string> argv) {
     this->y = y;
     this->id = id;
     this->argv = (argv);
+    this->isAlive = true;
 }
 
 Bomber::~Bomber() {
@@ -47,6 +48,10 @@ int Bomber::getFd() const {
     return this->fd;
 }
 
+bool Bomber::getIsAlive() const {
+    return this->isAlive;
+}
+
 void Bomber::setX(int x) {
     this->x = x;
 }
@@ -69,4 +74,8 @@ void Bomber::setArgv(std::vector<std::string> argv) {
 
 void Bomber::setFd(int fd) {
     this->fd = fd;
+}
+
+void Bomber::setIsAlive(bool isAlive) {
+    this->isAlive = isAlive;
 }

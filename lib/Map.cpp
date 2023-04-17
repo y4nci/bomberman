@@ -12,6 +12,14 @@
 #include "Map.h"
 #include "../logging.h"
 
+/**
+ * @brief Construct a new Map:: Map object
+ *
+ * @param width width of the map
+ * @param height height of the map
+ * @param obstacleInputs the vector of ObstacleInput objects
+ * @param bomberInputs the vector of BomberInput objects
+ */
 Map::Map(int width, int height, std::vector<ObstacleInput> obstacleInputs, std::vector<BomberInput> bomberInputs) {
     int bomberId = 0;
 
@@ -104,7 +112,7 @@ void Map::setBombers(std::vector<Bomber> bombers) {
  * @param id the id of the bomber
  * @return std::pair<int, std::vector<od>> the pair includes: the number of objects (bombers, bombs, obstacles) that the bomber can see and a vector of od objects.
  */
-std::pair<int, std::vector<od>> Map::seeBomber(int id) {
+std::pair<int, std::vector<od> > Map::seeBomber(int id) {
     Bomber *bomber = NULL;
     std::vector<od> objects;
 
@@ -137,12 +145,16 @@ std::pair<int, std::vector<od>> Map::seeBomber(int id) {
     }
 
     for (size_t i = 0; i < this->bombers.size(); i++) {
-        bool bomberCanSee = (
-            (this->bombers[i].getX() >= bomber->getX() - 3 && this->bombers[i].getX() <= bomber->getX() + 3 && bomber->getY() == this->bombers[i].getY()) ||
-            (this->bombers[i].getY() >= bomber->getY() - 3 && this->bombers[i].getY() <= bomber->getY() + 3 && bomber->getX() == this->bombers[i].getX())
+        bool bomberCanSee;
+
+        if (!this->bombers[i].getIsAlive() || this->bombers[i].getId() == id) continue;
+
+        bomberCanSee = (
+                (this->bombers[i].getX() >= bomber->getX() - 3 && this->bombers[i].getX() <= bomber->getX() + 3 && bomber->getY() == this->bombers[i].getY()) ||
+                (this->bombers[i].getY() >= bomber->getY() - 3 && this->bombers[i].getY() <= bomber->getY() + 3 && bomber->getX() == this->bombers[i].getX())
         );
 
-        if (bomberCanSee && this->bombers[i].getId() != bomber->getId()) {
+        if (bomberCanSee) {
             od obstacleData;
             coordinate coor;
             coor.x = this->bombers[i].getX();
@@ -155,7 +167,11 @@ std::pair<int, std::vector<od>> Map::seeBomber(int id) {
     }
 
     for (size_t i = 0; i < this->bombs.size(); i++) {
-        bool bomberCanSee = (
+        bool bomberCanSee;
+
+        if (this->bombs[i].getIsExploded()) continue;
+
+        bomberCanSee = (
             (this->bombs[i].getX() >= bomber->getX() - 3 && this->bombs[i].getX() <= bomber->getX() + 3 && bomber->getY() == this->bombs[i].getY()) ||
             (this->bombs[i].getY() >= bomber->getY() - 3 && this->bombs[i].getY() <= bomber->getY() + 3 && bomber->getX() == this->bombs[i].getX())
         );
@@ -175,74 +191,56 @@ std::pair<int, std::vector<od>> Map::seeBomber(int id) {
     return std::make_pair(objects.size(), objects);
 }
 
+/**
+ * @brief this function returns an std::pair<int, int> object.\n
+ * the pair includes: the x and y coordinates of the bomber after the move.\n
+ * if the move is not possible, the function returns (-1, -1)
+ * @param id the id of the bomber
+ * @param targetX the x coordinate of the target
+ * @param targetY the y coordinate of the target
+ * @return std::pair<int, int> the pair includes: the x and y coordinates of the bomber after the move.
+ */
 std::pair<int, int> Map::moveBomber(int id, int targetX, int targetY) {
-    Bomber *bomber = NULL;
-
-    for (size_t i = 0; i < this->bombers.size(); i++) {
-        if (this->bombers[i].getId() == id) {
-            bomber = &this->bombers[i];
-        }
-    }
-
-    if (bomber == NULL) {
-        return std::make_pair(-1, -1);
-    }
-
     for (size_t i = 0; i < this->obstacles.size(); i++) {
         if (this->obstacles[i].getX() == targetX && this->obstacles[i].getY() == targetY) {
-            return std::make_pair(bomber->getX(), bomber->getY());
+            return std::make_pair(this->bombers[id].getX(), this->bombers[id].getY());
         }
     }
 
     for (size_t i = 0; i < this->bombers.size(); i++) {
+        if (!this->bombers[i].getIsAlive()) continue;
         if (this->bombers[i].getX() == targetX && this->bombers[i].getY() == targetY && this->bombers[i].getId() != id) {
-            return std::make_pair(bomber->getX(), bomber->getY());
+            return std::make_pair(this->bombers[id].getX(), this->bombers[id].getY());
         }
     }
 
     if (targetX < 0 || targetX >= this->width || targetY < 0 || targetY >= this->height) {
-        return std::make_pair(bomber->getX(), bomber->getY());
+        return std::make_pair(this->bombers[id].getX(), this->bombers[id].getY());
     }
 
-    if (targetX - bomber->getX() > 1 || targetX - bomber->getX() < -1 || targetY - bomber->getY() > 1 || targetY - bomber->getY() < -1) {
-        return std::make_pair(bomber->getX(), bomber->getY());
+    if (targetX - this->bombers[id].getX() > 1 || targetX - this->bombers[id].getX() < -1 || targetY - this->bombers[id].getY() > 1 || targetY - this->bombers[id].getY() < -1) {
+        return std::make_pair(this->bombers[id].getX(), this->bombers[id].getY());
     }
 
-    if (targetX != bomber->getX() && targetY != bomber->getY()) {
-        return std::make_pair(bomber->getX(), bomber->getY());
+    if (targetX != this->bombers[id].getX() && targetY != this->bombers[id].getY()) {
+        return std::make_pair(this->bombers[id].getX(), this->bombers[id].getY());
     }
 
-    bomber->setX(targetX);
-    bomber->setY(targetY);
+    this->bombers[id].setX(targetX);
+    this->bombers[id].setY(targetY);
 
     return std::make_pair(targetX, targetY);
 }
 
+/**
+ * @brief this function kills a bomber.\n
+ * the bomber is NOT removed from the map and the fd is closed.\n
+ * they are only marked dead. the bomber is removed from the\n
+ * map by the controller when necessary.
+ * @param id id of the bomber
+ */
 void Map::killBomber(int id) {
-    // TODO: send BOMBER_DIE message to bomber
-    Bomber *bomber = NULL;
-    std::vector<Bomber> newBombers;
-
-    for (size_t i = 0; i < this->bombers.size(); i++) {
-        if (this->bombers[i].getId() == id) {
-            bomber = &this->bombers[i];
-        }
-    }
-
-    if (bomber == NULL) {
-        return;
-    }
-
-    for (size_t i = 0; i < this->bombers.size(); i++) {
-        if (this->bombers[i].getId() != id) {
-            newBombers.push_back(this->bombers[i]);
-        }
-    }
-
-    this->bombers = newBombers;
-
-    // the fd is already closed during fork
-    // close(bomber->getFd());
+    this->bombers[id].setIsAlive(false);
 }
 
 void Map::setBombs(std::vector<Bomb> bombs) {
@@ -257,24 +255,20 @@ void Map::setBombs(std::vector<Bomb> bombs) {
  * @return a pair of fd and pid of bomb process, respectively
  */
 std::pair<int, int> Map::plantBomb(int bomberId, int radius, int durability) {
-    Bomber *bomber = NULL;
+    Bomber bomber = this->bombers[bomberId];
     Bomb bomb (0, 0,radius);
-    int fd, bombPID;
+    int bombPID;
 
-    for (size_t i = 0; i < this->bombers.size(); i++) {
-        if (this->bombers[i].getId() == bomberId) {
-            bomber = &this->bombers[i];
-        }
-    }
-
+    // check if there is already a bomb at the bomber's position
     for (size_t i = 0; i < this->bombs.size(); i++) {
-        if (this->bombs[i].getX() == bomber->getX() && this->bombs[i].getY() == bomber->getY()) {
+        if (this->bombs[i].getIsExploded()) continue;
+        if (this->bombs[i].getX() == bomber.getX() && this->bombs[i].getY() == bomber.getY()) {
             return std::make_pair(-1, -1);
         }
     }
 
-    bomb.setX(bomber->getX());
-    bomb.setY(bomber->getY());
+    bomb.setX(bomber.getX());
+    bomb.setY(bomber.getY());
 
     int pid = forkBombProcess(this, &bomb, bomberId);
 
@@ -286,15 +280,15 @@ std::pair<int, int> Map::plantBomb(int bomberId, int radius, int durability) {
 }
 
 /**
- * @brief explodes the bomb at the given coordinates. closes the pipe of the bomb and returns the ids of the bombers that were killed\n
+ * @brief explodes the bomb at the given coordinates. returns the ids of the bombers that were killed\n
  * also reduces a point from the obstacle if it is on the bomb's path. removes the obstacle if it has no more points
  * @param bombX x coordinate of the bomb
  * @param bombY y coordinate of the bomb
  * @return the ids of the bombers that were killed
  */
-std::vector<int> Map::explodeBomb(int bombX, int bombY, std::vector<int> *fds) {
+std::vector<int> Map::explodeBomb(int bombX, int bombY) {
     /**
-     * if all the bombers die in this round, the farthest bomber from the bomb is going to win the game.\n
+     * if all the bombers die with the same bomb, the farthest bomber from the bomb is going to win the game.\n
      * if there are multiple bombers that are the same distance from the bomb, the bomber with the highest id wins.\n
      * this is only because the bomber with the highest id is the last bomber in the vector, so is actually random.\n
      * in order to keep the information about who won the game, we hold the distance and the id in variables.\n
@@ -302,22 +296,16 @@ std::vector<int> Map::explodeBomb(int bombX, int bombY, std::vector<int> *fds) {
      * NOTE: their fd should also not be closed. that's because the bgame main function will close the fd of the bomber that won the game.
      */
 
-    int lowestDistance = std::max(this->height, this->width), lowestDistanceBomberId = std::max(this->height, this->width);
-    int bombRadius, bombFd;
+    int lowestDistance = std::max(this->height, this->width), lowestDistanceBomberId = -1;
+    int bombRadius;
     int initialBomberCount = this->bombers.size();
     std::vector<int> killedBombers;
-    std::vector<std::pair<int, int>> obstacleCoords;
+    std::vector<std::pair<int, int> > obstacleCoords;
 
     for (size_t i = 0; i < this->bombs.size(); i++) {
+        if (this->bombs[i].getIsExploded()) continue;
         if (this->bombs[i].getX() == bombX && this->bombs[i].getY() == bombY) {
-            bombFd = (*fds)[i];
-
-            if (this->bombs[i].getIsExploded()) {
-                return killedBombers;
-            }
-
             bombRadius = this->bombs[i].getRadius();
-            // bombFd = this->bombs[i].getFd();
             this->bombs[i].setIsExploded(true);
 
             break;
@@ -325,29 +313,35 @@ std::vector<int> Map::explodeBomb(int bombX, int bombY, std::vector<int> *fds) {
     }
 
     for (size_t i = 0; i < this->bombers.size(); i++) {
-        bool mightDie = (
-            (this->bombers[i].getX() <= bombX + bombRadius && this->bombers[i].getX() >= bombX - bombRadius && bombY == this->bombers[i].getY()) ||
-            (this->bombers[i].getY() <= bombY + bombRadius && this->bombers[i].getY() >= bombY - bombRadius && bombX == this->bombers[i].getX())
+        bool mightDie;
+
+        if (!this->bombers[i].getIsAlive()) continue;
+
+        mightDie = (
+                (this->bombers[i].getX() <= bombX + bombRadius && this->bombers[i].getX() >= bombX - bombRadius && bombY == this->bombers[i].getY()) ||
+                (this->bombers[i].getY() <= bombY + bombRadius && this->bombers[i].getY() >= bombY - bombRadius && bombX == this->bombers[i].getX())
         );
 
         if (mightDie) {
-            bool obstacleInWay = false;
+            bool thereIsAnObstacleInWay = false;
 
             for (size_t j = 0; j < this->obstacles.size(); j++) {
-                obstacleInWay = obstacleInWay || (
+                bool thisObstacleIsInTheWay = (
                     (this->obstacles[j].getX() < bombX && this->obstacles[j].getX() > this->bombers[i].getX() && bombY == this->obstacles[j].getY()) ||
                     (this->obstacles[j].getX() > bombX && this->obstacles[j].getX() < this->bombers[i].getX() && bombY == this->obstacles[j].getY()) ||
                     (this->obstacles[j].getY() < bombY && this->obstacles[j].getY() > this->bombers[i].getY() && bombX == this->obstacles[j].getX()) ||
                     (this->obstacles[j].getY() > bombY && this->obstacles[j].getY() < this->bombers[i].getY() && bombY == this->obstacles[j].getX())
                 );
 
-                if (obstacleInWay) {
+                thereIsAnObstacleInWay = thereIsAnObstacleInWay || thisObstacleIsInTheWay;
+
+                if (thisObstacleIsInTheWay) {
                     obstacleCoords.push_back(std::make_pair(this->obstacles[j].getX(), this->obstacles[j].getY()));
                     break;
                 }
             }
 
-            if (!obstacleInWay) {
+            if (!thereIsAnObstacleInWay) {
                 if (this->bombers[i].getX() == bombX) {
                     if (std::abs(this->bombers[i].getY() - bombY) <= lowestDistance) {
                         lowestDistance = std::abs(this->bombers[i].getY() - bombY);
@@ -376,11 +370,9 @@ std::vector<int> Map::explodeBomb(int bombX, int bombY, std::vector<int> *fds) {
                 obstacleData->position.x = obstacleCoords[i].first;
                 obstacleData->position.y = obstacleCoords[i].second;
 
-                if (this->obstacles[j].getDurability() == -1) {
-                    continue;
+                if (this->obstacles[j].getDurability() != -1) {
+                    this->obstacles[j].decreaseDurability(1);
                 }
-
-                this->obstacles[j].decreaseDurability(1);
 
                 obstacleData->remaining_durability = this->obstacles[j].getDurability();
                 print_output(NULL, NULL, obstacleData, NULL);
@@ -393,19 +385,12 @@ std::vector<int> Map::explodeBomb(int bombX, int bombY, std::vector<int> *fds) {
         }
     }
 
-    // set the lucky winner id
+    // set the lucky winner id if all the bombers are killed
     if (killedBombers.size() == initialBomberCount) {
         this->setLuckyWinnerId(lowestDistanceBomberId);
+    } else {
+        this->setLuckyWinnerId(-1);
     }
-
-    for (size_t i = 0; i < killedBombers.size(); i++) {
-        if (this->bombers[i].getId() != this->luckyWinnerId) {
-            // remove them from the map
-            this->killBomber(this->bombers[i].getId());
-        }
-    }
-
-    close(bombFd);
 
     return killedBombers;
 }
@@ -422,7 +407,7 @@ std::vector<int> Map::explodeBomb(int bombX, int bombY, std::vector<int> *fds) {
 
 
 /**
- * Forks the bomber processes and returns their PIDs
+ * Forks the bomber processes, creates pipes, and returns their PIDs
  * @param map the map instance
  * @param fds the fds the parent process (controller) holds. comes from main in bgame
  * @return PIDs of the bomber processes
@@ -434,7 +419,7 @@ std::vector<int> forkBomberProcesses(Map* map, std::vector<int>* fds) {
         int fd[2];
         PIPE(fd);
         fds->push_back(fd[0]);
-        map->getBombers()[i].setFd(fd[1]);
+        map->getBombers()[i].setFd(fd[0]);
 
         int pid = fork();
         PIDs.push_back(pid);
@@ -450,8 +435,6 @@ std::vector<int> forkBomberProcesses(Map* map, std::vector<int>* fds) {
             dup2(fd[1], STDOUT_FILENO);
             argv[map->getBombers()[i].getArgv().size()] = NULL;
             execv(argv[0], argv);
-
-            // delete [] argv;
         } else {
             close(fd[1]); // CLOSE CHILD'S CHANNEL
         }
@@ -460,12 +443,18 @@ std::vector<int> forkBomberProcesses(Map* map, std::vector<int>* fds) {
     return PIDs;
 }
 
+/**
+ * Forks the bomb process, creates pipe, and returns its PID
+ * @param map the map instance
+ * @param bomb the bomb instance
+ * @param bomberId the id of the bomber who dropped the bomb
+ * @return PID of the bomb process
+ */
 int forkBombProcess(Map* map, Bomb* bomb, int bomberId) {
     std::vector<std::string> bomberArgv = map->getBombers()[bomberId].getArgv();
     int fd[2];
     PIPE(fd);
 
-    // NOTE: unlike the bomber processes, the bomb obj holds the controller's fd in itself in map.
     bomb->setFd(fd[0]);
 
     int pid = fork();
@@ -482,9 +471,6 @@ int forkBombProcess(Map* map, Bomb* bomb, int bomberId) {
         dup2(fd[1], STDOUT_FILENO);
         argv[bomberArgv.size()] = NULL;
         execv(argv[0], argv);
-        // send_message(map->getBombers()[i].getFd(), (om*) BOMBER_START); THIS IS PROBABLY WRONG
-
-        // delete [] argv;
     } else {
         close(fd[1]); // CLOSE CHILD'S CHANNEL
     }
@@ -492,6 +478,14 @@ int forkBombProcess(Map* map, Bomb* bomb, int bomberId) {
     return pid;
 }
 
-bool isGameFinished(Map map) {
-    return (map.getBomberCount() <= 1);
+bool isGameFinished(Map *map) {
+    int remainingBomberCount = 0;
+
+    for (size_t i = 0; i < map->getBombers().size(); i++) {
+        if (map->getBombers()[i].getIsAlive()) {
+            remainingBomberCount++;
+        }
+    }
+
+    return (remainingBomberCount <= 1);
 }

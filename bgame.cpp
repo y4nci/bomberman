@@ -9,8 +9,6 @@
  *
  */
 
-// TODO: check the allocated memory for the messages.
-
 #include "lib/Bomber.h"
 #include "lib/Bomb.h"
 #include "lib/Inputs.h"
@@ -29,12 +27,13 @@ int main() {
      * holds parent's fd's for communicating with bombers.\n
      * by time, bombers die but these fd's are still in the vector, despite being closed.\n
      * So, we will refer them to with the bomber's id, which will act as an index.\n
+     * if the bomber is dead, we will set the fd to -1.\n
      */
     std::vector<int> bomberFds;
 
     /**
      * holds parent's fd's for communicating with bombs.\n
-     * we will destroy the fd's when the bomb explodes.
+     * we will set the fd's of the exploded bombs to -1.\n
      */
     std::vector<int> bombFds;
 
@@ -44,19 +43,7 @@ int main() {
      */
     std::vector<int> bomberPIDs = forkBomberProcesses(&map, &bomberFds);
 
-    /**
-     * holds the PIDs of the bombs.\n
-     * used in outputting.
-     */
-    // vector<int> bombPIDs;
-
-    while (!isGameFinished(map)) {
-        /**
-         * holds the ids of bombers that will die in this iteration.\n
-         * we will destroy the fd's of these bombers and remove them from the Map vector after the iteration.
-         */
-        std::vector<int> bomberIdsToDestroy;
-
+    while (!isGameFinished(&map)) {
         /**
          * holds the ```struct pollfd``` objects for bombers and bombs.\n
          * we will use these objects to poll the bombers and bombs.\n
@@ -64,11 +51,12 @@ int main() {
          * we may use the fd or the coordinates of the bombs as an index to refer to the bomb's fd.\n
          * these vectors should be passed to the ```poll``` function and in return, the function will fill the\n
          * ```revents``` field of the ```struct pollfd``` objects.\n
-         *
-         * TODO: do not forget to free the allocated memory for the ```struct pollfd``` objects.
          */
         std::vector<struct pollfd> bomberPollFds, bombPollFds;
 
+        bool gameFinished = false;
+
+        // POLL BOMBS
         for (int i = 0; i < map.getBombCount(); i++) {
             struct pollfd pollFd;
 
@@ -81,11 +69,15 @@ int main() {
 
             bombPollFds.push_back(pollFd);
         }
-
         poll(bombPollFds.data(), bombPollFds.size(), 0);
 
         // BOMBS
         for (int i = 0; i < map.getBombCount(); i++) {
+            /**
+             * holds the ids of bombers that will die in this iteration.\n
+             * we will destroy the fd's of these bombers and call killBomber function on them after the iteration.
+             */
+            std::vector<int> bomberIdsToDestroy;
             Bomb bomb = map.getBombs()[i];
 
             if (bomb.getIsExploded()) {
@@ -105,33 +97,26 @@ int main() {
             if (res == -1) continue;
 
             if (message->type == BOMB_EXPLODE) {
-                int luckyBomberId;
-
-                bomberIdsToDestroy = map.explodeBomb(bomb.getX(), bomb.getY(), &bombFds);
-                luckyBomberId = map.getLuckyWinnerId();
-
-                for (int j = 0; j < bomberIdsToDestroy.size(); j++) {
-                    int bomberId = bomberIdsToDestroy[j];
-                    int bomberFd = bomberFds[bomberId];
-
-                    if (bomberId == luckyBomberId) continue;
-
-                    close(bomberFd);
-                    bomberFds[bomberId] = -1;
-                }
+                bomberIdsToDestroy = map.explodeBomb(bomb.getX(), bomb.getY());
             } else continue;
+
+            // BOMBER DEATHS
+            for (int j = 0; j < bomberIdsToDestroy.size(); j++) {
+                int bomberId = bomberIdsToDestroy[j];
+                int killedBomberFd = bomberFds[bomberId];
+
+                if (bomberId == map.getLuckyWinnerId()) continue;
+
+                map.killBomber(bomberId);
+
+                close(killedBomberFd);
+                bomberFds[bomberId] = -1;
+            }
+
+            gameFinished = isGameFinished(&map);
         }
 
-
-        // BOMBER DEATHS
-        for (int i = 0; i < bomberIdsToDestroy.size(); i++) {
-            int bomberId = bomberIdsToDestroy[i];
-            int fd = bomberFds[bomberId];
-
-            close(fd);
-            bomberFds[bomberId] = -1;
-            map.killBomber(bomberId);
-        }
+        if (gameFinished) break;
 
         // POLL BOMBERS
         for (int i = 0; i < map.getBomberCount(); i++) {
@@ -150,6 +135,9 @@ int main() {
         for (int i = 0; i < map.getBomberCount(); i++) {
             Bomber bomber = map.getBombers()[i];
             int fd = bomberFds[i];
+
+            if (!bomber.getIsAlive() || fd == -1) continue;
+
             im* message = new im;
 
             bool shouldRead = (bomberPollFds[i].revents & POLLIN);
@@ -213,7 +201,7 @@ int main() {
 
                 print_output(NULL, outputMessage, NULL, NULL);
             } else if (message->type == BOMBER_SEE) {
-                std::pair<int, std::vector<od>> seeResult = map.seeBomber(bomber.getId());
+                std::pair<int, std::vector<od> > seeResult = map.seeBomber(bomber.getId());
                 om* outgoingMessage = new om;
                 od* objects = new od[seeResult.first];
                 omp* outputMessage = new omp;
@@ -249,7 +237,18 @@ int main() {
 
         outgoingMessage->type = BOMBER_WIN;
 
-        send_message(bomberFds[map.getBombers()[0].getId()], outgoingMessage);
+        for (int i = 0; i < map.getBomberCount(); i++) {
+            if (map.getBombers()[i].getIsAlive()) {
+                int winnerId = map.getBombers()[i].getId();
+
+                send_message(bomberFds[winnerId], outgoingMessage);
+
+                map.killBomber(winnerId);
+
+                close(bomberFds[winnerId]);
+                break;
+            }
+        }
     } else {
         int winnerId = map.getLuckyWinnerId();
 
@@ -257,9 +256,9 @@ int main() {
 
         outgoingMessage->type = BOMBER_WIN;
 
-        send_message(bomberFds[map.getBombers()[0].getId()], outgoingMessage);
+        send_message(bomberFds[winnerId], outgoingMessage);
 
-        // the bomber were not removed from the map, so we have to do it manually here
+        // the bomber was not removed from the map, so we have to do it manually here
         map.killBomber(winnerId);
 
         close(bomberFds[winnerId]);
@@ -267,23 +266,23 @@ int main() {
 
     std::vector<struct pollfd> bombPollFds;
 
-    for (int i = 0; i < map.getBombCount(); i++) {
-        struct pollfd pollFd;
-
-        if (map.getBombs()[i].getIsExploded()) {
-            continue;
-        }
-
-        pollFd.fd = bombFds[i];
-        pollFd.events = POLLIN;
-
-        bombPollFds.push_back(pollFd);
-    }
-
-    poll(bombPollFds.data(), bombPollFds.size(), 0);
-
     while (true) {
         bool shouldBreak = true;
+
+        // POLL BOMBS
+        for (int i = 0; i < map.getBombCount(); i++) {
+            struct pollfd pollFd;
+
+            if (map.getBombs()[i].getIsExploded()) {
+                continue;
+            }
+
+            pollFd.fd = bombFds[i];
+            pollFd.events = POLLIN;
+
+            bombPollFds.push_back(pollFd);
+        }
+        poll(bombPollFds.data(), bombPollFds.size(), 0);
 
         for (int i = 0; i < map.getBombCount(); i++) {
             if (!map.getBombs()[i].getIsExploded()) {
@@ -301,9 +300,9 @@ int main() {
                 if (res == -1) continue;
 
                 if (message->type == BOMB_EXPLODE) {
-                    map.explodeBomb(map.getBombs()[i].getX(), map.getBombs()[i].getY(), &bombFds);
-                } else continue;
-            } else continue;
+                    map.explodeBomb(map.getBombs()[i].getX(), map.getBombs()[i].getY());
+                }
+            }
         }
 
         if (shouldBreak) break;

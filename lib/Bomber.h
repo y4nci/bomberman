@@ -24,6 +24,7 @@ private:
     int PID;
     std::vector<std::string> argv;
     int fd;
+    bool isAlive;
 public:
     Bomber(int x, int y, int id, std::vector<std::string> argv);
     ~Bomber();
@@ -33,12 +34,15 @@ public:
     int getPID() const;
     std::vector<std::string> getArgv();
     int getFd() const;
+    bool getIsAlive() const;
+
     void setX(int x);
     void setY(int y);
     void setId(int id);
     void setPID(int PID);
     void setArgv(std::vector<std::string> argv);
     void setFd(int fd);
+    void setIsAlive(bool isAlive);
 };
 
 #endif //HW1_BOMBER_H

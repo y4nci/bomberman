@@ -384,6 +384,8 @@ std::vector<int> Map::explodeBomb(int bombX, int bombY) {
                 if (this->obstacles[j].getDurability() == 0) {
                     this->obstacles.erase(this->obstacles.begin() + j);
                 }
+
+                delete obstacleData;
                 break;
             }
         }
@@ -439,6 +441,8 @@ std::vector<int> forkBomberProcesses(Map* map, std::vector<int>* fds) {
             dup2(fd[1], STDOUT_FILENO);
             argv[map->getBombers()[i].getArgv().size()] = NULL;
             execv(argv[0], argv);
+
+            delete [] argv;
         } else {
             close(fd[1]); // CLOSE CHILD'S CHANNEL
         }
@@ -478,6 +482,8 @@ int forkBombProcess(Map* map, Bomb* bomb) {
         
         close(fd[0]); // CLOSE PARENT'S CHANNEL
         execv(argv[0], argv);
+
+        delete [] argv;
     } else {
         close(fd[1]); // CLOSE CHILD'S CHANNEL
     }

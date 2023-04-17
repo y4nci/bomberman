@@ -101,11 +101,17 @@ int main() {
 
             bool shouldRead = (bombPollFds[i].revents & POLLIN);
 
-            if (!shouldRead) continue;
+            if (!shouldRead) {
+                delete message;
+                continue;
+            }
 
             int res = read_data(fd, message);
 
-            if (res == -1) continue;
+            if (res == -1) {
+                delete message;
+                continue;
+            }
 
             if (message->type == BOMB_EXPLODE) {
                 int status;
@@ -116,7 +122,10 @@ int main() {
                 bombFds[i] = -1;
 
                 waitpid(bomberPIDs[i], &status, WNOHANG);
-            } else continue;
+            } else {
+                delete message;
+                continue;
+            }
 
             // BOMBER DEATHS
             for (int j = 0; j < bomberIdsToDestroy.size(); j++) {
@@ -131,6 +140,8 @@ int main() {
 
                 // their fd's are going to be closed when there is a request.
             }
+
+            delete message;
         }
 
         gameFinished = isGameFinished(&map);
@@ -165,13 +176,19 @@ int main() {
 
             bool shouldRead = (bomberPollFds[i].revents & POLLIN);
 
-            if (!shouldRead) continue;
+            if (!shouldRead) {
+                delete message;
+                continue;
+            }
 
             int res = read_data(fd, message);
 
             imp* printMessage = new imp;
 
-            if (res == -1) continue;
+            if (res == -1) {
+                delete message;
+                continue;
+            }
 
             /**
              * @brief the bomber is marked killed but their fd is still open.\n
@@ -197,8 +214,13 @@ int main() {
 
                     waitpid(bomberPIDs[bomber.getId()], &status, WNOHANG);
                     
+                    delete outgoingMessage;
+                    delete outputMessage;
                     continue;
                 }
+
+                delete outgoingMessage;
+                delete outputMessage;
             }
 
             /**
@@ -231,6 +253,8 @@ int main() {
 
                 waitpid(bomberPIDs[bomber.getId()], &status, WNOHANG);
 
+                delete outgoingMessage;
+                delete outputMessage;
                 continue;
             }
 
@@ -258,6 +282,9 @@ int main() {
                 outputMessage->m = outgoingMessage;
 
                 print_output(NULL, outputMessage, NULL, NULL);
+
+                delete outgoingMessage;
+                delete outputMessage;
             } else if (message->type == BOMBER_PLANT) {
                 std::pair<int, int> plantData = map.plantBomb(bomber.getId(), message->data.bomb_info.radius, message->data.bomb_info.interval);
                 int bombFd = plantData.first, bombPID = plantData.second;
@@ -276,6 +303,9 @@ int main() {
                 print_output(NULL, outputMessage, NULL, NULL);
 
                 if (plantSuccessful) bombFds.push_back(bombFd);
+                
+                delete outgoingMessage;
+                delete outputMessage;
             } else if (message->type == BOMBER_START) {
                 coordinate coor;
                 om* outgoingMessage = new om;
@@ -291,6 +321,9 @@ int main() {
                 outputMessage->m = outgoingMessage;
 
                 print_output(NULL, outputMessage, NULL, NULL);
+                
+                delete outgoingMessage;
+                delete outputMessage;
             } else if (message->type == BOMBER_SEE) {
                 std::pair<int, std::vector<od> > seeResult = map.seeBomber(bomber.getId());
                 om* outgoingMessage = new om;
@@ -312,7 +345,14 @@ int main() {
                 outputMessage->m = outgoingMessage;
 
                 print_output(NULL, outputMessage, NULL, objects);
+
+                delete outgoingMessage;
+                delete outputMessage;
+                delete[] objects;
             }
+
+            delete message;
+            delete printMessage;
         }
 
         /**

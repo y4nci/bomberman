@@ -69,4 +69,5 @@ public:
 
 std::vector<int> forkBomberProcesses(Map* map, std::vector<int>* fds);
 int forkBombProcess(Map* map, Bomb* bomb, int bomberId);
+int remainingAliveBomberCount(Map* map);
 bool isGameFinished(Map* map);

@@ -478,7 +478,7 @@ int forkBombProcess(Map* map, Bomb* bomb, int bomberId) {
     return pid;
 }
 
-bool isGameFinished(Map *map) {
+int remainingAliveBomberCount(Map* map) {
     int remainingBomberCount = 0;
 
     for (size_t i = 0; i < map->getBombers().size(); i++) {
@@ -487,5 +487,9 @@ bool isGameFinished(Map *map) {
         }
     }
 
-    return (remainingBomberCount <= 1);
+    return remainingBomberCount;
+}
+
+bool isGameFinished(Map *map) {
+    return (remainingAliveBomberCount(map) <= 1);
 }

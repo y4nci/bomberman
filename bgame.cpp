@@ -114,6 +114,7 @@ int main() {
             }
 
             gameFinished = isGameFinished(&map);
+            if (gameFinished) break;
         }
 
         if (gameFinished) break;
@@ -232,7 +233,7 @@ int main() {
         sleep(1);
     }
 
-    if (map.getBomberCount() == 1) {
+    if (remainingAliveBomberCount(&map) == 1) {
         om* outgoingMessage = new om;
 
         outgoingMessage->type = BOMBER_WIN;
@@ -243,9 +244,12 @@ int main() {
 
                 send_message(bomberFds[winnerId], outgoingMessage);
 
+                // the bomber was not marked dead, so we have to do it manually here
                 map.killBomber(winnerId);
 
                 close(bomberFds[winnerId]);
+
+                bomberFds[winnerId] = -1;
                 break;
             }
         }
@@ -258,10 +262,12 @@ int main() {
 
         send_message(bomberFds[winnerId], outgoingMessage);
 
-        // the bomber was not removed from the map, so we have to do it manually here
+        // the bomber was not marked dead, so we have to do it manually here
         map.killBomber(winnerId);
 
         close(bomberFds[winnerId]);
+        
+        bomberFds[winnerId] = -1;
     }
 
     std::vector<struct pollfd> bombPollFds;
@@ -288,14 +294,13 @@ int main() {
             if (!map.getBombs()[i].getIsExploded()) {
                 int fd = bombFds[i];
                 im* message = new im;
-
                 bool shouldRead = (bombPollFds[i].revents & POLLIN);
+
+                shouldBreak = false;
 
                 if (!shouldRead) continue;
 
                 int res = read_data(fd, message);
-
-                shouldBreak = false;
 
                 if (res == -1) continue;
 

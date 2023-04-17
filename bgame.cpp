@@ -115,13 +115,21 @@ int main() {
 
             if (message->type == BOMB_EXPLODE) {
                 int status;
+                imp* printMessage = new imp;
+
+                printMessage->pid = bomb.getPID();
+                printMessage->m = message;
+
+                print_output(printMessage, NULL, NULL, NULL);
 
                 bomberIdsToDestroy = map.explodeBomb(bomb.getX(), bomb.getY());
+
+                delete printMessage;
 
                 close(bombFds[i]);
                 bombFds[i] = -1;
 
-                waitpid(bomberPIDs[i], &status, WNOHANG);
+                waitpid(bomb.getPID(), &status, WNOHANG);
             } else {
                 delete message;
                 continue;
@@ -196,6 +204,11 @@ int main() {
             if (!bomber.getIsAlive()) {
                 om* outgoingMessage = new om;
                 omp* outputMessage = new omp;
+
+                printMessage->pid = bomberPIDs[bomber.getId()];
+                printMessage->m = message;
+
+                print_output(printMessage, NULL, NULL, NULL);
 
                 outgoingMessage->type = BOMBER_DIE;
 

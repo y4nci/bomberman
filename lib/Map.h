@@ -50,7 +50,7 @@ public:
     void setBombers(std::vector<Bomber> bombers);
     void setBombs(std::vector<Bomb> bombs);
 
-    std::pair<int, std::vector<od>> seeBomber(int id);
+    std::pair<int, std::vector<od> > seeBomber(int id);
     std::pair<int, int> moveBomber(int id, int targetX, int targetY);
     void killBomber(int id);
     std::pair<int, int> plantBomb(int bomberId, int radius, int durability);
@@ -67,9 +67,7 @@ public:
 
 
 
-std::vector<int> createBomberPipes(Map* map);
-int createBombPipe(Bomb* bomb);
-
 std::vector<int> forkBomberProcesses(Map* map, std::vector<int>* fds);
-int forkBombProcess(Map* map, int bomberId, int fd);
-bool isGameFinished(Map map);
+int forkBombProcess(Map* map, Bomb* bomb, int bomberId);
+int remainingAliveBomberCount(Map* map);
+bool isGameFinished(Map* map);

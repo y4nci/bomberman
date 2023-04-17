@@ -18,6 +18,8 @@
 #include "logging.h"
 
 #include <poll.h>
+#include <sys/wait.h>
+#include <sys/types.h>
 
 int main() {
     Inputs inputs;
@@ -44,12 +46,6 @@ int main() {
     std::vector<int> bomberPIDs = forkBomberProcesses(&map, &bomberFds);
 
     bool gameFinished = false;
-
-    /**
-     * @brief indicates whether the BOMBER_WIN message is sent to 
-     * 
-     */
-    bool winnerDisplayed = false;
 
     while (true) {
         /**
@@ -112,7 +108,14 @@ int main() {
             if (res == -1) continue;
 
             if (message->type == BOMB_EXPLODE) {
+                int status;
+
                 bomberIdsToDestroy = map.explodeBomb(bomb.getX(), bomb.getY());
+
+                close(bombFds[i]);
+                bombFds[i] = -1;
+
+                waitpid(bomberPIDs[i], &status, WNOHANG);
             } else continue;
 
             // BOMBER DEATHS
@@ -187,8 +190,13 @@ int main() {
                 print_output(NULL, outputMessage, NULL, NULL);
 
                 if (freshlyDead[freshlyDead.size() - 1] != bomber.getId() && map.getLuckyWinnerId() != bomber.getId()) {
+                    int status = 0;
+
                     close(fd);
                     bomberFds[i] = -1;
+
+                    waitpid(bomberPIDs[bomber.getId()], &status, WNOHANG);
+                    
                     continue;
                 }
             }
@@ -198,7 +206,7 @@ int main() {
              * we do not care about the bomber's response, or the initial message.\n
              */
             if (gameFinished) {
-                int winnerId = bomber.getId();
+                int winnerId = bomber.getId(), status;
 
                 // TODO: not sure if this is needed
                 if (map.getLuckyWinnerId() != -1) {
@@ -220,6 +228,8 @@ int main() {
                 close(fd);
                 bomberFds[i] = -1;
                 map.killBomber(bomber.getId());
+
+                waitpid(bomberPIDs[bomber.getId()], &status, WNOHANG);
 
                 continue;
             }

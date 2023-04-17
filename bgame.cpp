@@ -250,6 +250,11 @@ int main() {
 
                 om* outgoingMessage = new om;
                 omp* outputMessage = new omp;
+                
+                printMessage->pid = bomberPIDs[bomber.getId()];
+                printMessage->m = message;
+
+                print_output(printMessage, NULL, NULL, NULL);
 
                 outgoingMessage->type = BOMBER_WIN;
 

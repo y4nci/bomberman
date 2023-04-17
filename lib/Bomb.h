@@ -17,15 +17,17 @@ private:
     int x;
     int y;
     int radius;
+    int interval;
     bool isExploded;
     int fd;
     int PID;
 public:
-    Bomb(int x, int y, int radius);
+    Bomb(int x, int y, int radius, int interval);
     ~Bomb();
     int getX() const;
     int getY() const;
     int getRadius() const;
+    int getInterval() const;
     int getIsExploded() const;
     int getFd() const;
     int getPID() const;
@@ -33,6 +35,7 @@ public:
     void setX(int x);
     void setY(int y);
     void setRadius(int radius);
+    void setInterval(int interval);
     void setIsExploded(bool isExploded);
     void setFd(int fd);
     void setPID(int PID);

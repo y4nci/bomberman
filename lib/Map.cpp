@@ -12,6 +12,10 @@
 #include "Map.h"
 #include "../logging.h"
 
+// DEBUG
+#include <iostream>
+// DEBUG
+
 /**
  * @brief Construct a new Map:: Map object
  *
@@ -254,9 +258,9 @@ void Map::setBombs(std::vector<Bomb> bombs) {
  * @param durability
  * @return a pair of fd and pid of bomb process, respectively
  */
-std::pair<int, int> Map::plantBomb(int bomberId, int radius, int durability) {
+std::pair<int, int> Map::plantBomb(int bomberId, int radius, int interval) {
     Bomber bomber = this->bombers[bomberId];
-    Bomb bomb (0, 0,radius);
+    Bomb bomb (0, 0,radius, interval);
     int bombPID;
 
     // check if there is already a bomb at the bomber's position
@@ -270,7 +274,7 @@ std::pair<int, int> Map::plantBomb(int bomberId, int radius, int durability) {
     bomb.setX(bomber.getX());
     bomb.setY(bomber.getY());
 
-    int pid = forkBombProcess(this, &bomb, bomberId);
+    int pid = forkBombProcess(this, &bomb);
 
     bomb.setPID(pid);
 
@@ -450,8 +454,7 @@ std::vector<int> forkBomberProcesses(Map* map, std::vector<int>* fds) {
  * @param bomberId the id of the bomber who dropped the bomb
  * @return PID of the bomb process
  */
-int forkBombProcess(Map* map, Bomb* bomb, int bomberId) {
-    std::vector<std::string> bomberArgv = map->getBombers()[bomberId].getArgv();
+int forkBombProcess(Map* map, Bomb* bomb) {
     int fd[2];
     PIPE(fd);
 
@@ -460,16 +463,20 @@ int forkBombProcess(Map* map, Bomb* bomb, int bomberId) {
     int pid = fork();
 
     if (pid == 0) { // child
-        close(fd[0]); // CLOSE PARENT'S CHANNEL
-        char** argv = new char*[bomberArgv.size() + 1];
+        char** argv = new char*[3];
 
-        bomberArgv[0] = "./bomb";
-        for (size_t j = 0; j < bomberArgv.size(); j++) {
-            argv[j] = (char*) bomberArgv[j].c_str();
-        }
+        argv[0] = new char [8];
+        argv[1] = new char [16];
+        argv[2] = NULL;
+        
         dup2(fd[1], STDIN_FILENO);
         dup2(fd[1], STDOUT_FILENO);
-        argv[bomberArgv.size()] = NULL;
+
+        sprintf(argv[0], "./bomb");
+        sprintf(argv[1], "%d", bomb->getInterval());
+        argv[2] = NULL;
+        
+        close(fd[0]); // CLOSE PARENT'S CHANNEL
         execv(argv[0], argv);
     } else {
         close(fd[1]); // CLOSE CHILD'S CHANNEL

@@ -194,7 +194,7 @@ std::pair<int, std::vector<od> > Map::seeBomber(int id) {
 /**
  * @brief this function returns an std::pair<int, int> object.\n
  * the pair includes: the x and y coordinates of the bomber after the move.\n
- * if the move is not possible, the function returns (-1, -1)
+ * if the move is not possible, the function returns the current position of the bomber.\n
  * @param id the id of the bomber
  * @param targetX the x coordinate of the target
  * @param targetY the y coordinate of the target

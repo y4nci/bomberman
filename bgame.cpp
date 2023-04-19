@@ -14,12 +14,14 @@
 #include "lib/Inputs.h"
 #include "lib/Map.h"
 
-#include "message.h"
 #include "logging.h"
+#include "message.h"
 
 #include <poll.h>
+#include <string>
 #include <sys/wait.h>
 #include <sys/types.h>
+#include <vector>
 
 int main() {
     /**

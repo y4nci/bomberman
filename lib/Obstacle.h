@@ -12,8 +12,6 @@
 #ifndef HW1_OBSTACLE_H
 #define HW1_OBSTACLE_H
 
-#include "Inputs.h"
-
 class Obstacle {
 private:
     /**

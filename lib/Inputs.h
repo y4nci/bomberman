@@ -15,10 +15,6 @@
 #include <string>
 #include <vector>
 
-#include "Obstacle.h"
-#include "Bomber.h"
-
-
 /**
  * @brief The struct for bomber inputs.
  * the struct contains x and y coordinates of the bomber, including the argument count and argument vector.

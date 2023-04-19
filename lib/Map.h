@@ -10,13 +10,16 @@
  */
 
 #include "Bomb.h"
+#include "Bomber.h"
+#include "Inputs.h"
 #include "Obstacle.h"
 
+#include "../message.h"
+
 #include <algorithm>
+#include <sys/socket.h>
 #include <unistd.h>
 #include <vector>
-#include <sys/socket.h>
-#include "../message.h"
 
 #define PIPE(fd) socketpair(AF_UNIX, SOCK_STREAM, PF_UNIX, fd)
 #define MAX_OBJECT_COUNT 24

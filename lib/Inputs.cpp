@@ -9,9 +9,10 @@
  *
  */
 
+#include "Inputs.h"
+
 #include <utility>
 #include <iostream>
-#include "Inputs.h"
 
 /**
  * @brief This function gets input from stdin, parses and stores the data in the class.

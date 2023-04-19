@@ -12,9 +12,8 @@
 #ifndef HW1_BOMBER_H
 #define HW1_BOMBER_H
 
-#include "Inputs.h"
-#include <vector>
 #include <string>
+#include <vector>
 
 class Bomber {
 private:

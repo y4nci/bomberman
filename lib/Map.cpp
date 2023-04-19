@@ -2,8 +2,8 @@
  * @file Map.cpp
  * @author Baran Yancı (e2449015)
  * @brief This file includes function definitions for the Map class.
- * @version 0.0.0
- * @date 2023-04-13
+ * @version 0.0.1
+ * @date 2023-04-19
  *
  * @copyright Copyright (c) 2023
  *
@@ -12,9 +12,32 @@
 #include "Map.h"
 #include "../logging.h"
 
-// DEBUG
-#include <iostream>
-// DEBUG
+/**
+ * @brief Construct a new Map:: Map object from Inputs object
+ * 
+ * @param inputs the Inputs object
+ */
+Map::Map(const Inputs& inputs) {
+    int bomberId = 0;
+
+    this->width = inputs.getMapWidth();
+    this->height = inputs.getMapHeight();
+    this->luckyWinnerId = -1;
+
+    for (size_t i = 0; i < inputs.getObstacleInputs().size(); i++) {
+        Obstacle obstacle(inputs.getObstacleInputs()[i].x, inputs.getObstacleInputs()[i].y, inputs.getObstacleInputs()[i].durability);
+
+        this->obstacles.push_back(obstacle);
+    }
+
+    for (size_t i = 0; i < inputs.getBomberInputs().size(); i++) {
+        Bomber bomber(inputs.getBomberInputs()[i].x, inputs.getBomberInputs()[i].y, bomberId, inputs.getBomberInputs()[i].argv);
+
+        this->bombers.push_back(bomber);
+
+        bomberId++;
+    }
+}
 
 /**
  * @brief Construct a new Map:: Map object
@@ -110,9 +133,9 @@ void Map::setBombers(std::vector<Bomber> bombers) {
 }
 
 /**
- * @brief this function returns an std::pair<int, std::vector<od>> object.\n
- * the pair includes: the number of objects (bombers, bombs, obstacles) that the bomber can see and a vector of od objects.\n
- * the bomber can see 3 block up, down, left and right of him. no diagonals\n
+ * @brief this function returns an std::pair<int, std::vector<od>> object.
+ * the pair includes: the number of objects (bombers, bombs, obstacles) that the bomber can see and a vector of od objects.
+ * the bomber can see 3 block up, down, left and right of him. no diagonals
  * @param id the id of the bomber
  * @return std::pair<int, std::vector<od>> the pair includes: the number of objects (bombers, bombs, obstacles) that the bomber can see and a vector of od objects.
  */
@@ -196,9 +219,9 @@ std::pair<int, std::vector<od> > Map::seeBomber(int id) {
 }
 
 /**
- * @brief this function returns an std::pair<int, int> object.\n
- * the pair includes: the x and y coordinates of the bomber after the move.\n
- * if the move is not possible, the function returns the current position of the bomber.\n
+ * @brief this function returns an std::pair<int, int> object.
+ * the pair includes: the x and y coordinates of the bomber after the move.
+ * if the move is not possible, the function returns the current position of the bomber.
  * @param id the id of the bomber
  * @param targetX the x coordinate of the target
  * @param targetY the y coordinate of the target
@@ -237,9 +260,9 @@ std::pair<int, int> Map::moveBomber(int id, int targetX, int targetY) {
 }
 
 /**
- * @brief this function kills a bomber.\n
- * the bomber is NOT removed from the map and the fd is closed.\n
- * they are only marked dead. the bomber is removed from the\n
+ * @brief this function kills a bomber.
+ * the bomber is NOT removed from the map and the fd is closed.
+ * they are only marked dead. the bomber is removed from the
  * map by the controller when necessary.
  * @param id id of the bomber
  */
@@ -256,18 +279,17 @@ void Map::setBombs(std::vector<Bomb> bombs) {
  * @param bomberId id of bomber who planted the bomb
  * @param radius
  * @param durability
- * @return a pair of fd and pid of bomb process, respectively
+ * @return the fd of the bomb. -1 if the bomber is already standing on a bomb
  */
-std::pair<int, int> Map::plantBomb(int bomberId, int radius, int interval) {
+int Map::plantBomb(int bomberId, int radius, int interval) {
     Bomber bomber = this->bombers[bomberId];
     Bomb bomb (0, 0,radius, interval);
-    int bombPID;
 
     // check if there is already a bomb at the bomber's position
     for (size_t i = 0; i < this->bombs.size(); i++) {
         if (this->bombs[i].getIsExploded()) continue;
         if (this->bombs[i].getX() == bomber.getX() && this->bombs[i].getY() == bomber.getY()) {
-            return std::make_pair(-1, -1);
+            return -1;
         }
     }
 
@@ -280,11 +302,11 @@ std::pair<int, int> Map::plantBomb(int bomberId, int radius, int interval) {
 
     this->bombs.push_back(bomb);
 
-    return std::make_pair(bomb.getFd(), bombPID);
+    return bomb.getFd();
 }
 
 /**
- * @brief explodes the bomb at the given coordinates. returns the ids of the bombers that were killed\n
+ * @brief explodes the bomb at the given coordinates. returns the ids of the bombers that were killed
  * also reduces a point from the obstacle if it is on the bomb's path. removes the obstacle if it has no more points
  * @param bombX x coordinate of the bomb
  * @param bombY y coordinate of the bomb
@@ -292,17 +314,17 @@ std::pair<int, int> Map::plantBomb(int bomberId, int radius, int interval) {
  */
 std::vector<int> Map::explodeBomb(int bombX, int bombY) {
     /**
-     * if all the bombers die with the same bomb, the farthest bomber from the bomb is going to win the game.\n
-     * if there are multiple bombers that are the same distance from the bomb, the bomber with the highest id wins.\n
-     * this is only because the bomber with the highest id is the last bomber in the vector, so is actually random.\n
-     * in order to keep the information about who won the game, we hold the distance and the id in variables.\n
+     * if all the bombers die with the same bomb, the farthest bomber from the bomb is going to win the game.
+     * if there are multiple bombers that are the same distance from the bomb, the bomber with the highest id wins.
+     * this is only because the bomber with the highest id is the last bomber in the vector, so is actually random.
+     * in order to keep the information about who won the game, we hold the distance and the id in variables.
      *
      * NOTE: their fd should also not be closed. that's because the bgame main function will close the fd of the bomber that won the game.
      */
 
     int lowestDistance = std::max(this->height, this->width), lowestDistanceBomberId = -1;
     int bombRadius;
-    int initialBomberCount = this->bombers.size();
+    size_t initialBomberCount = this->bombers.size();
     std::vector<int> killedBombers;
     std::vector<std::pair<int, int> > obstacleCoords;
 

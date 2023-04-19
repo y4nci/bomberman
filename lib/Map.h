@@ -2,8 +2,8 @@
  * @file Map.h
  * @author Baran Yancı (e2449015)
  * @brief This file includes class definitions about map for bgame.
- * @version 0.0.0
- * @date 2023-04-13
+ * @version 0.0.1
+ * @date 2023-04-19
  *
  * @copyright Copyright (c) 2023
  *
@@ -23,14 +23,38 @@
 
 class Map {
 private:
+    /**
+     * @brief the width of the map.
+     */
     int width;
+
+    /**
+     * @brief the height of the map.
+     */
     int height;
-    // holds the id of the winner bomber who won in a round where everyone died
+
+    /**
+     * @brief the lucky winner id.
+     * holds the id of the winner bomber, who died in an explosion that killed everyone.
+     */
     int luckyWinnerId;
+
+    /**
+     * @brief the vector of obstacles.
+     */
     std::vector<Obstacle> obstacles;
+
+    /**
+     * @brief the vector of bombers.
+     */
     std::vector<Bomber> bombers;
+
+    /**
+     * @brief the vector of bombs.
+     */
     std::vector<Bomb> bombs;
 public:
+    Map(const Inputs& inputs);
     Map(int width, int height, std::vector<ObstacleInput> obstacleInputs, std::vector<BomberInput> bomberInputs);
     ~Map();
     int getWidth();
@@ -53,7 +77,7 @@ public:
     std::pair<int, std::vector<od> > seeBomber(int id);
     std::pair<int, int> moveBomber(int id, int targetX, int targetY);
     void killBomber(int id);
-    std::pair<int, int> plantBomb(int bomberId, int radius, int interval);
+    int plantBomb(int bomberId, int radius, int interval);
     std::vector<int> explodeBomb(int bombX, int bombY);
 };
 

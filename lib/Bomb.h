@@ -2,8 +2,8 @@
  * @file Bomb.h
  * @author Baran Yancı (e2449015)
  * @brief This file includes class definitions about Bomb for bgame.
- * @version 0.0.0
- * @date 2023-04-13
+ * @version 0.0.1
+ * @date 2023-04-19
  *
  * @copyright Copyright (c) 2023
  *
@@ -14,13 +14,40 @@
 
 class Bomb {
 private:
+    /**
+     * @brief x coordinate of the bomb.
+     */
     int x;
+
+    /**
+     * @brief y coordinate of the bomb.
+     */
     int y;
+
+    /**
+     * @brief the radius of the explosion.
+     */
     int radius;
+
+    /**
+     * @brief the interval to pass as an argument to bomb executable.
+     */
     int interval;
-    bool isExploded;
+
+    /**
+     * @brief the file descriptor of the pipe.
+     */
     int fd;
+
+    /**
+     * @brief the process id of the bomb executable.
+     */
     int PID;
+
+    /**
+     * @brief the status of the bomb.
+     */
+    bool isExploded;
 public:
     Bomb(int x, int y, int radius, int interval);
     ~Bomb();

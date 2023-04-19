@@ -2,8 +2,8 @@
  * @file Obstacles.h
  * @author Baran Yancı (e2449015)
  * @brief This file includes class definitions for obstacles for bgame.
- * @version 0.0.0
- * @date 2023-04-13
+ * @version 0.0.1
+ * @date 2023-04-19
  *
  * @copyright Copyright (c) 2023
  *
@@ -16,8 +16,19 @@
 
 class Obstacle {
 private:
+    /**
+     * @brief the x coordinate of the obstacle.
+     */
     int x;
+
+    /**
+     * @brief the y coordinate of the obstacle.
+     */
     int y;
+
+    /**
+     * @brief the durability of the obstacle.
+     */
     int durability;
 public:
     Obstacle(int x, int y, int durability);

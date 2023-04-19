@@ -2,8 +2,8 @@
  * @file Bomber.h
  * @author Baran Yancı (e2449015)
  * @brief This file includes class definitions for bomber for bgame.
- * @version 0.0.0
- * @date 2023-04-13
+ * @version 0.0.1
+ * @date 2023-04-19
  *
  * @copyright Copyright (c) 2023
  *
@@ -18,12 +18,39 @@
 
 class Bomber {
 private:
+    /**
+     * @brief x coordinate of the bomber.
+     */
     int x;
+
+    /**
+     * @brief y coordinate of the bomber.
+     */
     int y;
+
+    /**
+     * @brief the id of the bomber.
+     */
     int id;
+
+    /**
+     * @brief the process id of the bomber executable.
+     */
     int PID;
+
+    /**
+     * @brief the argument vector of the bomber executable.
+     */
     std::vector<std::string> argv;
+
+    /**
+     * @brief the file descriptor of the pipe.
+     */
     int fd;
+
+    /**
+     * @brief the status of the bomber.
+     */
     bool isAlive;
 public:
     Bomber(int x, int y, int id, std::vector<std::string> argv);

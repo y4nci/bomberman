@@ -2,8 +2,8 @@
  * @file Bomb.cpp
  * @author Baran Yancı (e2449015)
  * @brief This file includes function definitions about Bomb class.
- * @version 0.0.0
- * @date 2023-04-13
+ * @version 0.0.1
+ * @date 2023-04-19
  *
  * @copyright Copyright (c) 2023
  *

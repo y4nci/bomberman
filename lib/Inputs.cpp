@@ -2,8 +2,8 @@
  * @file Inputs.cpp
  * @author Baran Yancı (e2449015)
  * @brief This file includes function definitions about inputs for bgame.
- * @version 0.0.0
- * @date 2023-04-13
+ * @version 0.0.1
+ * @date 2023-04-19
  *
  * @copyright Copyright (c) 2023
  *
@@ -14,9 +14,8 @@
 #include "Inputs.h"
 
 /**
- * @brief This function gets input from stdin, parses and stores it.
+ * @brief This function gets input from stdin, parses and stores the data in the class.
  */
-
 Inputs::Inputs() {
     std::cin >> this->mapWidth >> this->mapHeight >> this->obstacleCount >> this->bomberCount;
 
